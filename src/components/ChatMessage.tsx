@@ -1,0 +1,88 @@
+import { Message } from "@/types/chat";
+import { FileIcon } from "lucide-react";
+
+interface ChatMessageProps {
+  message: Message;
+}
+
+export function ChatMessage({ message }: ChatMessageProps) {
+  const isUser = message.role === "user";
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-6`}>
+      {isUser ? (
+        // 유저 메시지 - 말풍선
+        <div className="max-w-[80%] bg-secondary rounded-2xl rounded-br-md px-4 py-3">
+          {message.files && message.files.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {message.files.map(file => (
+                <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg bg-primary/10">
+                  {file.type.startsWith('image/') ? (
+                    <img 
+                      src={file.url} 
+                      alt={file.name}
+                      className="max-w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(file.url, '_blank')}
+                    />
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-center w-8 h-8 bg-background rounded">
+                        <FileIcon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{file.name}</p>
+                        <p className="text-xs opacity-70">{formatFileSize(file.size)}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {message.content && (
+            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          )}
+        </div>
+      ) : (
+        // AI 메시지 - 말풍선 없이 텍스트만
+        <div className="max-w-[80%]">
+          {message.files && message.files.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {message.files.map(file => (
+                <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                  {file.type.startsWith('image/') ? (
+                    <img 
+                      src={file.url} 
+                      alt={file.name}
+                      className="max-w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => window.open(file.url, '_blank')}
+                    />
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-center w-8 h-8 bg-background rounded">
+                        <FileIcon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{file.name}</p>
+                        <p className="text-xs opacity-70">{formatFileSize(file.size)}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {message.content && (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{message.content}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
