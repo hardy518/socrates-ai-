@@ -44,11 +44,12 @@ const Index = () => {
       const sessionId = newSession.id;
       console.log("✅ 세션 ID:", sessionId);
       
-      const success = await checkAndIncrementUsage(sessionId);
-      if (!success) {
-        toast.error('사용 횟수 제한에 도달했습니다.');
-        return;
-      }
+     const success = await checkAndIncrementUsage(sessionId);
+if (!success) {
+  toast.error('사용 횟수 제한에 도달했습니다.');
+  setIsCreatingSession(false); // ← 이 줄만 추가!
+  return;
+}
       
       const initialPrompt = `사용자가 다음과 같은 상황을 공유했습니다:
 
