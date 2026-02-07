@@ -124,74 +124,75 @@ export function Sidebar({
       )}
 
       {/* 하단: 프로필 */}
-      {!isCollapsed && (
-        <div className="p-3 border-t border-border/50 flex-shrink-0">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-              <Button 
-  variant="ghost" 
-  className="w-full h-auto p-2 rounded-lg text-foreground hover:bg-secondary/80 hover:text-foreground transition-colors justify-start"
->
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                      {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
-                    </div>
-                    <span className="text-sm font-medium truncate flex-1 text-left">
-                      {user.displayName?.split(' ')[0] || user.email?.split('@')[0] || "사용자"}
-                    </span>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="top" align="start" className="w-64 mb-2">
-                <div className="flex items-center gap-3 px-2 py-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
-                    {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {user.displayName || "사용자"}
-                    </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {user.email}
-                    </div>
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
-                  <Settings className="w-4 h-4 mr-2" />
-                  <span>설정</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={handleSignOut}
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span>로그아웃</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button 
-              onClick={handleSignIn}
-              variant="outline" 
-              className="w-full justify-start"
-            >
-              <User className="w-4 h-4 mr-2" />
-              로그인
-            </Button>
-          )}
-        </div>
-      )}
-
-      {isCollapsed && user && (
-        <div className="p-2 border-t border-border/50 flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium mx-auto">
-            {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+      {/* 하단: 프로필 */}
+{!isCollapsed && (
+  <div className="p-3 border-t border-border/50 flex-shrink-0">
+    {user && !user.isAnonymous ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="ghost" 
+            className="w-full h-auto p-2 rounded-lg text-foreground hover:bg-secondary/80 hover:text-foreground transition-colors justify-start"
+          >
+            <div className="flex items-center gap-2 w-full">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
+                {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+              </div>
+              <span className="text-sm font-medium truncate flex-1 text-left">
+                {user.displayName?.split(' ')[0] || user.email?.split('@')[0] || "사용자"}
+              </span>
+            </div>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" align="start" className="w-64 mb-2">
+          <div className="flex items-center gap-3 px-2 py-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+              {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium truncate">
+                {user.displayName || "사용자"}
+              </div>
+              <div className="text-xs text-muted-foreground truncate">
+                {user.email}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
+            <Settings className="w-4 h-4 mr-2" />
+            <span>설정</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleSignOut}
+            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            <span>로그아웃</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : (
+      <Button 
+        onClick={handleSignIn}
+        variant="outline" 
+        className="w-full justify-start"
+      >
+        <User className="w-4 h-4 mr-2" />
+        로그인
+      </Button>
+    )}
+  </div>
+)}
+
+{isCollapsed && user && !user.isAnonymous && (
+  <div className="p-2 border-t border-border/50 flex-shrink-0">
+    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium mx-auto">
+      {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+    </div>
+  </div>
+)}
     </aside>
   );
 }
