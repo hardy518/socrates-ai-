@@ -76,9 +76,20 @@ if (!success) {
   };
 
   const handleSendMessage = async (content: string, files?: MessageFile[]) => {
-    if (!activeSession) return;
-    await addMessage(activeSession.id, { role: 'user', content, files });
+  if (!activeSession) return;
+  
+  // 🔥 files가 undefined/빈배열이면 아예 안 넣기
+  const messageData: { role: 'user'; content: string; files?: MessageFile[] } = {
+    role: 'user',
+    content
   };
+  
+  if (files && files.length > 0) {
+    messageData.files = files;
+  }
+  
+  await addMessage(activeSession.id, messageData);
+};
   
   const handleSendAIMessage = async (content: string) => {
     if (!activeSession) return;
