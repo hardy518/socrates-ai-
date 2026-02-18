@@ -14,12 +14,15 @@ export interface Message {
   files?: MessageFile[];
 }
 
+export type Category = "수학ㆍ과학" | "코딩" | "비즈니스ㆍ기획" | "글쓰기ㆍ외국어" | "데이터ㆍ분석";
+
 export interface ChatSession {
   id: string;
   title: string;
+  category: Category;
   problem: string;
   attempts: string;
-  goal: string;
+
   depth: number;
   currentStep: number;
   messages: Message[];
@@ -29,7 +32,8 @@ export interface ChatSession {
 }
 
 export interface QuestionForm {
+  category: Category;
   problem: string;
   attempts: string;
-  goal: string;
+  files?: MessageFile[];
 }

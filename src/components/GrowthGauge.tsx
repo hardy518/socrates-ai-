@@ -10,7 +10,7 @@ export function GrowthGauge({ current, total }: GrowthGaugeProps) {
   return (
     <div className="flex items-center gap-3">
       <div className="growth-gauge h-2 w-32 flex-shrink-0">
-        <div 
+        <div
           className="growth-gauge-fill"
           style={{ width: `${percentage}%` }}
         />
@@ -18,11 +18,6 @@ export function GrowthGauge({ current, total }: GrowthGaugeProps) {
       <span className={`text-sm font-medium tabular-nums ${isComplete ? 'text-[hsl(var(--growth-gauge))]' : 'text-muted-foreground'}`}>
         {current}/{total}
       </span>
-      {isComplete && (
-        <span className="text-xs text-[hsl(var(--growth-gauge))] font-medium">
-          성장 완료!
-        </span>
-      )}
     </div>
   );
 }

@@ -1,28 +1,51 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ChatSession, Message } from "@/types/chat";
+import type { ChatSession, Message, MessageFile } from "@/types/chat";
 
-const SOCRATIC_SYSTEM_INSTRUCTION = `당신은 소크라테스식 대화를 이끄는 AI 조력자입니다.
+const GET_SYSTEM_PROMPT = (category: string) => {
+  const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
+
+  const baseInstruction = `당신은 소크라테스식 대화를 이끄는 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다.
+  
+친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
+
+  if (isTechnical) {
+    return `${baseInstruction}
 
 핵심 역할:
-- 정답을 직접 알려주지 않고, 질문을 통해 사용자가 스스로 깨달아가도록 돕습니다.
-- 사용자의 문제(problem), 시도(attempts), 목표(goal)를 항상 염두에 두고 대화합니다.
+- 사용자가 스스로 답을 발견하도록 유도하는 것이 최우선 과제입니다.
+- 절대 답을 직접적으로 알려주지 마세요.
+- 질문과 짧은 힌트를 조합하여 사용자가 한 단계씩 나아가게 돕습니다.
+- 대화 단계(고민 단계)가 깊어질수록 힌트를 점점 구체적으로 제공하세요.
+- 마지막 단계 직전에는 정답에 매우 가까운 결정적인 힌트를 제공하세요.
 
 대화 방식:
 1. 질문 중심: 답변 대신 깊이 있는 질문을 던집니다.
-2. 구체적 예시: 추상적 질문에는 구체적 상황이나 예시를 함께 제시합니다.
-   예: "UI 도구를 고민 중이시군요. 예를 들어 러버블은 노코드 방식이고, 커서는 AI 코딩 도우미입니다. 각각의 장단점을 비교해보셨나요?"
-3. 대안 제시: 사용자가 한 방향만 보고 있다면, 다른 가능성과 그 이유를 함께 제시합니다.
-   예: "그 방법 외에 __를 고려해볼 수도 있어요. 이 방법은 __한 장점이 있고, __할 때 특히 효과적입니다. 어떻게 생각하시나요?"
+2. 예시 활용: 추상적인 개념은 구체적인 예시로 설명합니다.
+3. 힌트 조절: 사용자의 이해도에 따라 힌트의 강도를 조절합니다.`;
+  } else {
+    return `${baseInstruction}
 
+핵심 역할:
+- 사용자의 생각을 확장하고 탐구할 수 있도록 돕는 것이 목적입니다.
+- 정답을 유도하지 말고, 질문만으로 대화를 진행하세요.
+- 다양한 관점에서 문제를 바라볼 수 있도록 시야를 넓혀주는 질문을 던지세요.
+- 결론을 내기보다 탐구 과정 자체를 즐길 수 있도록 유도하세요.
+
+대화 방식:
+1. 열린 질문: "예/아니오"로 답할 수 없는 열린 질문을 주로 사용합니다.
+2. 관점 전환: "만약 ~라면 어떨까요?"와 같은 질문으로 새로운 시각을 제시합니다.
+3. 공감과 경청: 사용자의 맥락을 충분히 이해하고 그에 기반한 질문을 합니다.`;
+  }
+};
+
+const COMMON_RULES = `
 특별 상황 대응:
-- 답을 찾았을 때: 사용자가 명확한 결론이나 실행 계획을 말하면, 반드시 응답 시작 부분에 "[ANSWER_FOUND]" 태그를 붙이고, "좋은 통찰이네요! 스스로 답을 찾으셨습니다. 지금 '정답 보기'를 통해 실행 계획을 확인하실 수도 있고, 다른 가능성도 함께 고민해보실 수도 있어요." 라고 말합니다.
-- 방향 이탈: 사용자의 대화가 원래 목표와 동떨어진 방향으로 가면, 냉정하게 지적합니다.
-   예: "잠깐, 원래 목표는 [goal]이었는데 지금은 다른 이야기를 하고 계신 것 같아요. 다시 본질로 돌아가볼까요?"
+- 답을 찾았을 때: 사용자가 명확한 결론이나 실행 계획을 말하면, 반드시 응답 시작 부분에 "[ANSWER_FOUND]" 태그를 붙이고 격려하세요.
+- 방향 이탈: 원래의 고민 주제에서 벗어나면 부드럽게 다시 주제로 돌아오도록 안내하세요.
 
 스타일:
 - 짧고 명료하게, 한 번에 1-2개의 질문만 합니다.
-- 판단이나 충고 없이, 성찰을 유도하는 질문을 사용합니다.
-- 한국어로만 응답합니다.`;
+- 판단이나 충고 없이, 성찰을 유도하는 질문을 사용합니다.`;
 
 function getApiKey(): string {
   const key = import.meta.env.VITE_ANTHROPIC_API_KEY;
@@ -32,27 +55,80 @@ function getApiKey(): string {
   return key;
 }
 
-function sessionToMessages(messages: Message[]): Array<{ role: "user" | "assistant"; content: string }> {
-  return messages.map((msg) => ({
-    role: msg.role === "user" ? "user" : "assistant",
-    content: msg.content,
-  }));
+async function fileToBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      resolve(base64.split(',')[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
-export async function generateAIResponse(session: ChatSession, userMessage: string): Promise<string> {
+export async function generateAIResponse(
+  session: ChatSession,
+  userMessage: string,
+  newFiles?: MessageFile[]
+): Promise<string> {
   const apiKey = getApiKey();
-  const client = new Anthropic({ 
+  const client = new Anthropic({
     apiKey,
-    dangerouslyAllowBrowser: true 
+    dangerouslyAllowBrowser: true
   });
 
-  const history = sessionToMessages(session.messages);
-  const messages = [...history, { role: "user" as const, content: userMessage }];
+  const systemPrompt = GET_SYSTEM_PROMPT(session.category) + COMMON_RULES;
+
+  // Prepare content for the current user message
+  const userContent: any[] = [{ type: "text", text: userMessage }];
+
+  // Handle files
+  if (newFiles && newFiles.length > 0) {
+    for (const file of newFiles) {
+      try {
+        const base64Data = await fileToBase64(file.url);
+        if (file.type.startsWith('image/')) {
+          userContent.push({
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: file.type as any,
+              data: base64Data,
+            },
+          });
+        } else if (file.type === 'application/pdf') {
+          userContent.push({
+            type: "document",
+            source: {
+              type: "base64",
+              media_type: "application/pdf",
+              data: base64Data,
+            },
+          });
+        }
+      } catch (err) {
+        console.error(`Error converting file ${file.name}:`, err);
+      }
+    }
+  }
+
+  // Convert history to Claude format
+  const history = session.messages.map(msg => {
+    return {
+      role: msg.role === "user" ? "user" as const : "assistant" as const,
+      content: msg.content
+    };
+  });
+
+  const messages = [...history, { role: "user" as const, content: userContent }];
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 1024,
-    system: SOCRATIC_SYSTEM_INSTRUCTION,
+    system: systemPrompt,
     messages: messages,
   });
 
@@ -63,11 +139,12 @@ export async function generateAIResponse(session: ChatSession, userMessage: stri
 
   return textContent.text;
 }
+
 export async function generateFinalAnswer(session: ChatSession): Promise<string> {
   const apiKey = getApiKey();
-  const client = new Anthropic({ 
+  const client = new Anthropic({
     apiKey,
-    dangerouslyAllowBrowser: true 
+    dangerouslyAllowBrowser: true
   });
 
   // 대화 히스토리 정리
@@ -77,15 +154,21 @@ export async function generateFinalAnswer(session: ChatSession): Promise<string>
 
   const finalPrompt = `다음은 사용자와의 전체 대화 내용입니다:
 
+카테고리: ${session.category}
 문제: ${session.problem}
-시도: ${session.attempts}
-목표: ${session.goal}
+현재 시도/배경: ${session.attempts}
 
 === 대화 내용 ===
 ${conversationSummary}
 
 === 요청 ===
 위 대화를 바탕으로, 사용자가 목표를 달성하기 위한 구체적이고 실행 가능한 해결 방안을 제시해주세요.
+
+중요 지침:
+- 이미지 마크다운(![])은 절대 사용하지 마세요
+- 불필요한 특수문자나 장식은 피하세요
+- 코딩, 수학, 과학 등 정답이 명확한 주제는 명확한 답변을 제공하세요
+- 일반 텍스트 형식으로 깔끔하게 작성하세요
 
 포함 내용:
 1. 핵심 통찰: 대화를 통해 발견한 가장 중요한 깨달음
@@ -96,7 +179,7 @@ ${conversationSummary}
 따뜻하고 격려하는 톤으로, 실질적인 조언을 제공하세요.`;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 2048,
     messages: [{ role: "user", content: finalPrompt }],
   });

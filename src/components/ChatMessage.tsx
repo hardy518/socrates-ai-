@@ -1,5 +1,8 @@
 import { Message } from "@/types/chat";
 import { FileIcon } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { CopyButton } from "./ui/CopyButton";
 
 interface ChatMessageProps {
   message: Message;
@@ -24,8 +27,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
               {message.files.map(file => (
                 <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg bg-primary/10">
                   {file.type.startsWith('image/') ? (
-                    <img 
-                      src={file.url} 
+                    <img
+                      src={file.url}
                       alt={file.name}
                       className="max-w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => window.open(file.url, '_blank')}
@@ -46,19 +49,19 @@ export function ChatMessage({ message }: ChatMessageProps) {
             </div>
           )}
           {message.content && (
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            <p className="text-base whitespace-pre-wrap">{message.content}</p>
           )}
         </div>
       ) : (
         // AI 메시지 - 말풍선 없이 텍스트만
-        <div className="max-w-[80%]">
+        <div className="max-w-[80%] group relative">
           {message.files && message.files.length > 0 && (
             <div className="space-y-2 mb-3">
               {message.files.map(file => (
                 <div key={file.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                   {file.type.startsWith('image/') ? (
-                    <img 
-                      src={file.url} 
+                    <img
+                      src={file.url}
                       alt={file.name}
                       className="max-w-full h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={() => window.open(file.url, '_blank')}
@@ -79,7 +82,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
             </div>
           )}
           {message.content && (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">{message.content}</p>
+            <div className="relative">
+              <div className="prose-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
+              <CopyButton
+                content={message.content}
+                className="absolute top-0 -right-12 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
+              />
+            </div>
           )}
         </div>
       )}

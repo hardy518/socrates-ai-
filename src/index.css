@@ -59,12 +59,9 @@
     @apply border-border;
   }
 
-  html, body {
-    @apply overflow-hidden h-full;
-  }
-  
-  #root {
-    @apply h-full;
+  html,
+  body {
+    @apply min-h-screen;
   }
 
   body {
@@ -97,7 +94,7 @@
   }
 
   .input-field {
-    @apply w-full bg-secondary border-0 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all resize-none;
+    @apply w-full bg-secondary border-0 rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none transition-all resize-none;
   }
 
   .sidebar-item {
@@ -110,6 +107,7 @@
 }
 
 @layer utilities {
+
   /* 커스텀 스크롤바 */
   .scrollbar-thin::-webkit-scrollbar {
     width: 6px;
@@ -134,6 +132,7 @@
     scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
   }
 }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -141,7 +140,7 @@
 html,
 body,
 #root {
-  @apply min-h-full
+  @apply min-h-screen;
 }
 
 @layer base {
@@ -205,6 +204,7 @@ body,
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -241,6 +241,62 @@ body,
 }
 
 /* Smooth scrolling */
+/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+/* Markdown Styles */
+.prose-markdown {
+  @apply text-base text-foreground leading-relaxed break-words w-full;
+}
+
+.prose-markdown h2 {
+  @apply text-xl font-bold mt-6 mb-3 text-foreground;
+}
+
+.prose-markdown h3 {
+  @apply text-lg font-bold mt-4 mb-2 text-foreground;
+}
+
+.prose-markdown p {
+  @apply mb-4 last:mb-0;
+}
+
+.prose-markdown ul {
+  @apply list-disc pl-6 mb-4 space-y-1;
+}
+
+.prose-markdown ol {
+  @apply list-decimal pl-6 mb-4 space-y-1;
+}
+
+.prose-markdown strong {
+  @apply font-bold text-foreground;
+}
+
+.prose-markdown code {
+  @apply px-1.5 py-0.5 rounded bg-secondary text-foreground text-sm font-mono;
+}
+
+.prose-markdown pre {
+  @apply p-4 rounded-xl bg-secondary overflow-x-auto mb-4 border border-border/50 shadow-sm font-mono text-sm leading-normal;
+}
+
+.prose-markdown pre code {
+  @apply p-0 bg-transparent text-foreground whitespace-pre;
+}
+
+.prose-markdown hr {
+  @apply my-6 border-t border-border/50;
+}
+
+.prose-markdown blockquote {
+  @apply pl-4 border-l-4 border-primary/30 italic text-muted-foreground mb-4;
+}
+
+/* Monospace override for ASCII and Box characters */
+.prose-markdown code,
+.prose-markdown pre {
+  font-family: 'ui-monospace', 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
 }
