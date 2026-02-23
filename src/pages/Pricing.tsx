@@ -138,48 +138,29 @@ const Pricing = () => {
 
                 {/* Pricing Cards Container */}
                 <div className="flex flex-col md:flex-row items-stretch justify-center gap-6 mb-16">
-                    {/* Basic Plan - Hidden if Pro */}
+
+                    {/* Starter Plan — hidden if already Pro */}
                     {!isPro && (
-                        <div className="flex-1 max-w-[300px] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 flex flex-col hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                            <div className="mb-6">
-                                <span className="inline-block px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold rounded-full mb-3 uppercase tracking-wider font-mono">
-                                    무료
-                                </span>
-                                <h2 className="text-xl font-bold mb-1">Basic</h2>
+                        <div className="flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                            <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">무료</div>
+                            <div className="mb-2">
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-bold">₩0</span>
-                                    <span className="text-slate-500 text-xs">/ 평생 무료</span>
+                                    <span className="text-4xl font-black text-slate-900 dark:text-white">₩0</span>
+                                    <span className="text-slate-500 text-sm font-medium">/월</span>
                                 </div>
+                                <p className="text-slate-500 text-sm mt-1">먼저 경험해보세요</p>
                             </div>
-                            <div className="flex-grow space-y-3 mb-6">
-                                <div className="flex items-start gap-2.5">
-                                    <span className="material-icons text-primary text-lg">check_circle</span>
-                                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                                        하루 2회 대화 세션
-                                    </span>
-                                </div>
-                                <div className="flex items-start gap-2.5">
-                                    <span className="material-icons text-primary text-lg">check_circle</span>
-                                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                                        5단계 심화 질문
-                                    </span>
-                                </div>
-                                <div className="flex items-start gap-2.5">
-                                    <span className="material-icons text-primary text-lg">check_circle</span>
-                                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                                        7일 대화 기록 보관
-                                    </span>
-                                </div>
-                                <div className="flex items-start gap-2.5">
-                                    <span className="material-icons text-primary text-lg">check_circle</span>
-                                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                                        익명성 보장 대화
-                                    </span>
-                                </div>
-                            </div>
+                            <ul className="space-y-3 my-6 flex-1">
+                                {["하루 5회 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                                    <li key={i} className="flex items-center gap-3 text-slate-500 text-sm">
+                                        <span className="material-icons text-primary text-base">check_circle</span>
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
                             <button
                                 onClick={handleBasicPlan}
-                                className="w-full py-3 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                className="w-full py-3 rounded-xl bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
                             >
                                 무료로 시작하기
                             </button>
@@ -187,76 +168,65 @@ const Pricing = () => {
                     )}
 
                     {/* Pro Plan */}
-                    <div className={`flex-1 max-w-[300px] bg-white dark:bg-slate-900 border-2 ${isPro ? 'border-primary' : 'border-primary/20'} rounded-2xl p-6 flex flex-col relative shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-all`}>
+                    <div className={`flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900 border-2 border-primary flex flex-col relative shadow-[0_24px_48px_-8px_rgba(66,133,244,0.18)]`}>
                         {isPro ? (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 text-[10px] font-bold rounded-full shadow-lg shadow-primary/40">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg shadow-primary/40">
                                 현재 사용 중
                             </div>
                         ) : (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-0.5 text-[10px] font-bold rounded-full">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 text-xs font-bold rounded-full">
                                 추천
                             </div>
                         )}
-                        <div className="mb-6">
-                            <span className="inline-block px-2.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-full mb-3 uppercase tracking-wider font-mono">
-                                Pro
-                            </span>
-                            <h2 className="text-xl font-bold mb-1">Pro</h2>
-                            <div className="flex flex-col">
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-bold">₩9,900</span>
-                                    <span className="text-slate-500 text-xs">/ 월</span>
-                                </div>
-                                {!isPro && (
-                                    <span className="text-primary text-xs font-semibold mt-1">
-                                        첫 달은 ₩4,900으로 체험하세요
-                                    </span>
-                                )}
+                        <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4 self-start">Pro</div>
+                        <div className="mb-2">
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-4xl font-black text-slate-900 dark:text-white">₩7,000</span>
+                                <span className="text-slate-500 text-sm font-medium">/월</span>
                             </div>
+                            <p className="text-slate-500 text-sm mt-1">더 깊이 생각하고 싶을 때</p>
                         </div>
-                        <div className="flex-grow space-y-3 mb-6">
-                            <div className="flex items-start gap-2.5">
-                                <span className="material-icons text-primary text-lg">check_circle</span>
-                                <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
-                                    무제한 대화 세션
-                                </span>
-                            </div>
-                            <div className="flex items-start gap-2.5">
-                                <span className="material-icons text-primary text-lg">check_circle</span>
-                                <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
-                                    영구적 대화 히스토리 보관
-                                </span>
-                            </div>
-                            <div className="flex items-start gap-2.5">
-                                <span className="material-icons text-primary text-lg">check_circle</span>
-                                <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
-                                    대화 내용 내보내기 & 검색
-                                </span>
-                            </div>
-                            <div className="flex items-start gap-2.5">
-                                <span className="material-icons text-primary text-lg">check_circle</span>
-                                <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
-                                    주간 사고 분석 리포트 제공
-                                </span>
-                            </div>
-                            <div className="flex items-start gap-2.5">
-                                <span className="material-icons text-primary text-lg">check_circle</span>
-                                <span className="text-sm text-slate-800 dark:text-slate-200 font-medium">
-                                    우선 순위 고객 지원
-                                </span>
-                            </div>
-                        </div>
+                        <ul className="space-y-3 my-6 flex-1">
+                            {["무제한 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-slate-800 dark:text-slate-200 text-sm font-semibold">
+                                    <span className="material-icons text-primary text-base">check_circle</span>
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
                         <button
                             onClick={handleProPlan}
                             disabled={isPro}
-                            className={`w-full py-3 bg-gradient-to-br from-primary via-primary to-blue-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed`}
+                            className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {isPro ? "구독 중" : "Pro로 시작하기"}
                         </button>
                     </div>
+
+                    {/* Enterprise Plan */}
+                    <div className="flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
+                        <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">기관/기업</div>
+                        <div className="mb-2">
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-slate-900 dark:text-white">가격 문의</span>
+                            </div>
+                            <p className="text-slate-500 text-sm mt-1">조직을 위한 맞춤 솔루션</p>
+                        </div>
+                        <ul className="space-y-3 my-6 flex-1">
+                            {["Pro보다 더 많은 사용량", "Pro의 모든 기능", "관리자 대시보드", "조직 멤버 관리", "데이터 내보내기", "전담 지원"].map((item, i) => (
+                                <li key={i} className="flex items-center gap-3 text-slate-500 text-sm">
+                                    <span className="material-icons text-primary text-base">check_circle</span>
+                                    {item}
+                                </li>
+                            ))}
+                        </ul>
+                        <button className="w-full py-3 rounded-xl bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
+                            가격 문의하기
+                        </button>
+                    </div>
                 </div>
 
-                {/* VAT Notice Section */}
+                {/* VAT Notice */}
                 <div className="max-w-2xl mx-auto text-center border-t border-slate-200 dark:border-slate-800 pt-8">
                     <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
                         표시된 가격에는 부가세가 포함되어 있습니다.
@@ -268,3 +238,4 @@ const Pricing = () => {
 };
 
 export default Pricing;
+

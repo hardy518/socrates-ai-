@@ -1,12 +1,56 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, MessageSquare, Zap, Target, Menu, X, CheckCircle2, Code2, Briefcase, PenTool, BarChart3, Binary, Sparkles, Send } from 'lucide-react';
+import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp } from 'lucide-react';
 import './App.css';
+
+const CATEGORIES = [
+  {
+    id: '수학ㆍ과학',
+    label: '수학ㆍ과학',
+    example: {
+      user: '수열 {aₙ}이 a₁=2, aₙ₊₁ = aₙ + 2n 으로 정의될 때, a₁₀의 값을 구하려고 하는데 어떻게 접근해야 할까요?',
+      ai: 'n=1일 때 식을 직접 적용해보면 a₂의 값은 얼마가 되나요? 그 다음 a₃은요? 이 과정을 반복하면서 어떤 패턴이 보이기 시작하나요?'
+    }
+  },
+  {
+    id: '코딩',
+    label: '코딩',
+    example: {
+      user: '이 알고리즘이 왜 O(n²)인지 모르겠어요.',
+      ai: '이 코드에서 반복 구조를 찾아보면, 어떤 부분이 서로 중첩되어 있나요? 외부 반복이 한 번 실행될 때 내부 반복은 몇 번 실행되나요?'
+    }
+  },
+  {
+    id: '비즈니스ㆍ기획',
+    label: '비즈니스ㆍ기획',
+    example: {
+      user: '스타트업 아이디어가 있는데 시장성이 있을지 모르겠어요.',
+      ai: '이 아이디어가 해결하려는 문제를, 지금 당장 돈을 내고서라도 해결하고 싶어 하는 사람이 주변에 있나요? 그들이 현재 어떻게 이 문제를 해결하고 있는지 알고 계신가요?'
+    }
+  },
+  {
+    id: '글쓰기ㆍ외국어',
+    label: '글쓰기ㆍ외국어',
+    example: {
+      user: '영어 에세이를 쓸 때 논리 전개가 잘 안 됩니다.',
+      ai: '이 에세이에서 가장 하고 싶은 말이 딱 하나라면 무엇인가요? 독자가 다 읽고 나서 어떤 생각 하나를 가져가길 바라나요?'
+    }
+  },
+  {
+    id: '데이터ㆍ분석',
+    label: '데이터ㆍ분석',
+    example: {
+      user: '상관관계가 높은데 왜 인과관계가 아닐 수 있나요?',
+      ai: '두 변수가 함께 움직인다는 것을 확인했군요. 그렇다면 A가 B를 만들어내는 것인지, B가 A를 만들어내는 것인지, 아니면 제3의 원인 C가 둘 다를 만들어내는지를 어떻게 구분할 수 있을까요?'
+    }
+  },
+];
 
 function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [heroPrompt, setHeroPrompt] = useState('');
   const [ctaPrompt, setCtaPrompt] = useState('');
+  const [activeCategory, setActiveCategory] = useState(0);
 
   const launchApp = (queryOrPath?: string) => {
     const mainAppUrl = window.location.hostname === 'localhost' ? 'http://localhost:8080' : '';
@@ -38,9 +82,6 @@ function App() {
       <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled ? 'glass py-3 border-b border-[#dadce0]/30 shadow-sm' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4285f4] to-[#9b51e0] flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <span className="text-xl font-bold text-white">S</span>
-            </div>
             <span className="text-2xl font-bold tracking-tight text-[#1f1f1f]">Socrates AI</span>
           </div>
 
@@ -63,43 +104,51 @@ function App() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-24 md:pt-48 md:pb-40 overflow-hidden px-6">
+      <section className="relative pt-32 pb-4 md:pt-48 md:pb-6 overflow-hidden px-6">
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[#4285f4] text-xs font-bold uppercase tracking-widest mb-10 animate-fade-in shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
-            V2.0 is now live
-          </div>
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black leading-[0.9] mb-12 text-gradient tracking-tighter">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-[0.95] mb-6 text-gradient tracking-tighter">
             Think<br />deeper.
           </h1>
-          <p className="max-w-2xl mx-auto text-xl md:text-2xl text-[#5f6368] mb-16 leading-relaxed font-light">
-            질문 하나가 당신의 가능성을 발견합니다. <br className="hidden md:block" /> AI가 안내하는 통찰력 있는 사유를 통해 진정한 해답을 찾아보세요.
+          <p className="max-w-2xl mx-auto text-base md:text-lg text-[#5f6368] mb-8 leading-relaxed font-light">
+            질문 하나로 당신의 가능성을 발견합니다.
           </p>
 
-          {/* Floating Input Bar (Gemini Style) */}
-          <div className="max-w-3xl mx-auto relative mb-16 group">
+          {/* Floating Input Bar */}
+          <div className="max-w-xl mx-auto relative mb-4 group">
             <div className="absolute -inset-1 bg-gradient-to-r from-[#4285f4] to-[#9b51e0] rounded-3xl blur-xl opacity-0 group-hover:opacity-10 transition duration-1000"></div>
-            <div className="relative flex items-center bg-white border border-[#dadce0] rounded-[2rem] p-3 pl-8 shadow-2xl shadow-blue-500/5 transition-all group-focus-within:border-[#4285f4] group-focus-within:ring-4 group-focus-within:ring-blue-500/5">
-              <Sparkles className="w-6 h-6 text-[#4285f4] mr-5" />
+            <div className="relative flex items-center bg-white border border-[#dadce0] rounded-[2rem] p-2 pl-6 shadow-2xl shadow-blue-500/5 transition-all group-focus-within:border-[#4285f4] group-focus-within:ring-4 group-focus-within:ring-blue-500/5">
               <input
                 type="text"
-                placeholder="어떤 고민이 있으신가요?"
-                className="bg-transparent border-none outline-none text-[#1f1f1f] w-full text-xl placeholder:text-[#5f6368]/50"
+                className="bg-transparent border-none outline-none text-[#1f1f1f] w-full text-base"
                 value={heroPrompt}
                 onChange={(e) => setHeroPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && launchApp(heroPrompt)}
               />
               <button
                 onClick={() => launchApp(heroPrompt)}
-                className="p-4 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-lg ml-3 group/btn"
+                className="p-3 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-lg ml-2 group/btn flex-shrink-0"
               >
-                <ArrowRight className="w-6 h-6 group-hover/btn:translate-x-1 transition-transform" />
+                <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
               </button>
             </div>
-            <div className="mt-6 flex justify-center gap-8 text-[11px] uppercase tracking-[0.2em] font-bold text-[#5f6368]/60">
-              <span className="flex items-center gap-2">Enter to search</span>
-              <span className="flex items-center gap-2">Privacy focused</span>
-            </div>
+          </div>
+
+          {/* Quick-select chips */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {[
+              { emoji: '🔢', label: 'Math' },
+              { emoji: '✍️', label: 'Write' },
+              { emoji: '</>', label: 'Code' },
+            ].map((chip) => (
+              <button
+                key={chip.label}
+                onClick={() => { setHeroPrompt(chip.label + ' '); launchApp(chip.label + ' '); }}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white border border-[#dadce0] text-[#5f6368] text-sm font-medium hover:border-[#4285f4]/50 hover:text-[#4285f4] transition-all shadow-sm"
+              >
+                <span className="text-xs">{chip.emoji}</span>
+                {chip.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -108,55 +157,113 @@ function App() {
         <div className="absolute -bottom-20 right-0 w-[500px] h-[500px] bg-blue-50/40 rounded-full blur-[120px] -z-10"></div>
       </section>
 
-      {/* Product Preview (High Fidelity) */}
-      <section id="demo" className="py-24 px-6 bg-[#f8f9fa]/50">
+      {/* Features — 3 Column Cards (NEW) */}
+      <section id="features" className="py-24 px-6 bg-[#f8f9fa]">
         <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_rgba(0,0,0,0.06)] border border-[#dadce0] relative animate-fade-in">
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: <Target className="w-8 h-8 text-[#4285f4]" />,
+                bg: '#eff4ff',
+                border: '#d2e3fc',
+                title: '단계적 질문',
+                desc: '정답을 알려주지 않습니다. 단계별 질문이 당신의 사고를 문제에서 해결책으로 확장시킵니다. 최종 답은 당신 스스로 이끌어냅니다.'
+              },
+              {
+                icon: <Shield className="w-8 h-8 text-[#4285f4]" />,
+                bg: '#eff4ff',
+                border: '#d2e3fc',
+                title: '📸 Snap & Think',
+                desc: '문제를 사진으로 찍어 올리세요. AI가 문제를 분석하고, 풀이 방법을 질문으로 안내합니다. 수학 문제부터 코딩 에러까지 모든 문제에 적용 가능합니다.'
+              },
+              {
+                icon: <TrendingUp className="w-8 h-8 text-[#4285f4]" />,
+                bg: '#eff4ff',
+                border: '#d2e3fc',
+                title: '성장 추적',
+                desc: '모든 대화가 저장됩니다. 당신의 사고가 어떻게 발전했는지 확인하고, 시간에 따른 추론 깊이를 한눈에 모니터링할 수 있습니다.'
+              }
+            ].map((f, i) => (
+              <div key={i} className="group p-10 rounded-[2rem] bg-white border border-[#dadce0] transition-all card-hover shadow-sm hover:shadow-xl hover:shadow-blue-500/5 hover:border-[#4285f4]/30">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 border`} style={{ background: f.bg, borderColor: f.border }}>
+                  {f.icon}
+                </div>
+                <h3 className="text-xl font-bold text-[#1f1f1f] mb-4">{f.title}</h3>
+                <p className="text-[#5f6368] text-base leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Deep Thinking Session — Segmented Control */}
+      <section id="demo" className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-black text-[#1f1f1f] mb-4 tracking-tight">Deep Thinking Session</h2>
+            <p className="text-[#5f6368] text-lg">어떤 주제든 소크라테스처럼 함께 고민합니다</p>
+          </div>
+
+          {/* Segmented Control */}
+          <div className="flex flex-wrap justify-center gap-2 mb-10">
+            {CATEGORIES.map((cat, i) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(i)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${activeCategory === i
+                  ? 'bg-[#4285f4] text-white border-[#4285f4] shadow-lg shadow-blue-500/20'
+                  : 'bg-white text-[#5f6368] border-[#dadce0] hover:border-[#4285f4]/50'
+                  }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Chat Preview */}
+          <div className="bg-white rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_rgba(0,0,0,0.06)] border border-[#dadce0]">
             {/* Browser-like header */}
-            <div className="h-14 bg-[#f8f9fa] border-b border-[#dadce0] flex items-center px-8 justify-between">
+            <div className="h-14 bg-[#f8f9fa] border-b border-[#dadce0] flex items-center px-8">
               <div className="flex gap-2">
                 <div className="w-3.5 h-3.5 rounded-full bg-[#dadce0]"></div>
                 <div className="w-3.5 h-3.5 rounded-full bg-[#dadce0]"></div>
                 <div className="w-3.5 h-3.5 rounded-full bg-[#dadce0]"></div>
               </div>
-              <div className="text-[11px] text-[#5f6368] font-bold tracking-[0.1em] uppercase">Deep Thinking Session</div>
-              <div className="w-10"></div>
             </div>
 
-            <div className="p-10 md:p-16 space-y-12">
+            <div className="p-10 md:p-14 space-y-10">
               {/* User Message */}
-              <div className="flex flex-col gap-4 items-end max-w-2xl ml-auto">
+              <div className="flex flex-col gap-3 items-end max-w-2xl ml-auto">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-[#5f6368]">User</span>
                   <div className="w-8 h-8 rounded-full bg-[#1f1f1f] flex items-center justify-center text-white text-[10px] uppercase font-bold">U</div>
                 </div>
-                <div className="p-6 rounded-3xl rounded-tr-sm bg-[#f1f3f4] text-[#1f1f1f] text-lg shadow-sm">
-                  인생의 진정한 목적을 어떻게 찾을 수 있을까요?
+                <div className="p-5 rounded-3xl rounded-tr-sm bg-[#f1f3f4] text-[#1f1f1f] text-base shadow-sm">
+                  {CATEGORIES[activeCategory].example.user}
                 </div>
               </div>
 
               {/* Socrates Response */}
-              <div className="flex flex-col gap-4 items-start max-w-2xl">
+              <div className="flex flex-col gap-3 items-start max-w-2xl">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#4285f4] to-[#9b51e0] flex items-center justify-center text-white text-[10px] font-bold">S</div>
                   <span className="text-xs font-semibold text-[#4285f4]">Socrates AI</span>
                 </div>
-                <div className="p-8 rounded-[2rem] rounded-tl-sm bg-white border border-[#dadce0] text-[#1f1f1f] text-lg leading-relaxed shadow-xl shadow-blue-500/5">
-                  <Sparkles className="w-5 h-5 text-[#4285f4] mb-4" />
-                  당신의 목적은 어딘가에서 '발견'되기를 기다리고 있는 것일까요, 아니면 당신이 매 순간 내리는 선택들을 통해 '창조'해 나가는 것일까요?
+                <div className="p-6 rounded-[2rem] rounded-tl-sm bg-white border border-[#dadce0] text-[#1f1f1f] text-base leading-relaxed shadow-xl shadow-blue-500/5">
+                  {CATEGORIES[activeCategory].example.ai}
                 </div>
               </div>
 
               {/* Progress Level */}
-              <div className="mt-16 pt-10 border-t border-[#f1f3f4] flex flex-col items-center">
-                <div className="flex justify-between w-full max-w-md text-[11px] font-bold text-[#5f6368] uppercase tracking-widest mb-4">
+              <div className="pt-8 border-t border-[#f1f3f4] flex flex-col items-center">
+                <div className="flex justify-between w-full max-w-md text-[11px] font-bold text-[#5f6368] uppercase tracking-widest mb-3">
                   <span>Surface Inquiry</span>
                   <span className="text-[#4285f4]">Deep Wisdom</span>
                 </div>
                 <div className="w-full max-w-md h-3 bg-[#f1f3f4] rounded-full overflow-hidden p-0.5">
                   <div className="h-full bg-gradient-to-r from-[#4285f4] to-[#9b51e0] w-[72%] rounded-full shadow-lg shadow-blue-500/20"></div>
                 </div>
-                <div className="mt-4 flex items-center gap-2">
+                <div className="mt-3 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#4285f4] animate-pulse"></div>
                   <span className="text-sm font-semibold text-[#1f1f1f]">현재 깊이: 72%</span>
                 </div>
@@ -166,210 +273,119 @@ function App() {
         </div>
       </section>
 
-      {/* Categories (Airy Grid) */}
-      <section id="categories" className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-            <div className="max-w-xl">
-              <h2 className="text-4xl md:text-6xl font-black text-[#1f1f1f] mb-6 tracking-tight">전문적인 사유 파트너</h2>
-              <p className="text-[#5f6368] text-xl leading-relaxed">다양한 학문적 범주에서 비판적 사고의 도구를 사용하여 지적인 확장을 경험해 보세요.</p>
-            </div>
-            <button onClick={() => launchApp('')} className="flex items-center gap-3 text-[#4285f4] font-bold text-lg hover:gap-5 transition-all group">
-              전체 탐구하기 <ArrowRight className="w-6 h-6 transition-transform" />
-            </button>
+      {/* Pricing */}
+      <section id="pricing" className="py-16 px-6 bg-[#f8f9fa]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-black text-[#1f1f1f] mb-3 tracking-tight">사유의 가치를 투자하세요</h2>
+            <p className="text-[#5f6368] max-w-xl mx-auto text-base font-light">당신의 지적 여정에 가장 적합한 단계를 선택해 보세요.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
-            {[
-              { icon: <Binary className="w-8 h-8" />, title: "수학·과학", items: ["추론 프로세스", "가설 검증"], color: "#4285f4" },
-              { icon: <Code2 className="w-8 h-8" />, title: "코딩", items: ["아키텍처 설계", "로직 비평"], color: "#4285f4" },
-              { icon: <Briefcase className="w-8 h-8" />, title: "비즈니스", items: ["전략적 직관", "모델링"], color: "#34a853" },
-              { icon: <PenTool className="w-8 h-8" />, title: "창의적 사고", items: ["내러티브", "은유"], color: "#ea4335" },
-              { icon: <BarChart3 className="w-8 h-8" />, title: "데이터", items: ["패턴 인식", "인과 관계"], color: "#fbbc05" }
-            ].map((cat, i) => (
-              <div key={i} className="p-10 rounded-[2.5rem] bg-white border border-[#dadce0] hover:border-[#4285f4] transition-all group card-hover">
-                <div className="w-16 h-16 rounded-[1.5rem] bg-[#f8f9fa] flex items-center justify-center mb-8 border border-[#dadce0]/50 group-hover:scale-110 transition-transform">
-                  <div style={{ color: cat.color }}>{cat.icon}</div>
+          <div className="grid md:grid-cols-3 gap-6 items-start">
+            {/* Starter */}
+            <div className="p-8 rounded-[2rem] bg-white border border-[#dadce0] flex flex-col card-hover">
+              <div className="inline-block px-3 py-1 rounded-full bg-[#f1f3f4] text-[#5f6368] text-xs font-bold mb-4">무료</div>
+              <div className="mb-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-[#1f1f1f]">₩0</span>
+                  <span className="text-[#5f6368] text-sm font-medium">/월</span>
                 </div>
-                <h3 className="text-xl font-bold text-[#1f1f1f] mb-6">{cat.title}</h3>
-                <ul className="space-y-4">
-                  {cat.items.map((item, j) => (
-                    <li key={j} className="flex items-center gap-3 text-[#5f6368] text-sm">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#dadce0] group-hover:bg-[#4285f4] transition-colors" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-[#5f6368] text-sm mt-1">먼저 경험해보세요</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features (Modern Minimal) */}
-      <section id="features" className="py-32 px-6 bg-[#f8f9fa]">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-24">
-            <h2 className="text-4xl md:text-6xl font-black text-[#1f1f1f] mb-8 tracking-tight">The Socratic Advantage</h2>
-            <p className="text-[#5f6368] text-xl leading-relaxed font-light">우리는 답을 주지 않습니다. 당신이 스스로 최선의 답을 내릴 수 있도록 '질문의 힘'을 제공합니다.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            {[
-              {
-                icon: <MessageSquare className="w-8 h-8 text-[#4285f4]" />,
-                title: "심층적 탐구",
-                desc: "단순한 지식을 넘어 문제의 본질을 꿰뚫는 질문을 던집니다."
-              },
-              {
-                icon: <Zap className="w-8 h-8 text-[#4285f4]" />,
-                title: "비판적 사고 보호",
-                desc: "자신의 논리적 오류를 식별하고 사고의 지평을 넓히세요."
-              },
-              {
-                icon: <Target className="w-8 h-8 text-[#4285f4]" />,
-                title: "자기 발견의 여정",
-                desc: "이미 당신 안에 존재하던 진실을 올바른 질문을 통해 이끌어냅니다."
-              }
-            ].map((f, i) => (
-              <div key={i} className="group p-12 rounded-[2.5rem] bg-white border border-[#dadce0] transition-all card-hover">
-                <div className="w-16 h-16 rounded-2xl bg-[#eff4ff] flex items-center justify-center mb-8 border border-[#d2e3fc]">
-                  {f.icon}
-                </div>
-                <h3 className="text-2xl font-bold text-[#1f1f1f] mb-5 font-display">{f.title}</h3>
-                <p className="text-[#5f6368] text-lg leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing (Premium Cards) */}
-      <section id="pricing" className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-24">
-            <div className="inline-block px-4 py-1.5 rounded-full bg-[#f8f9fa] border border-[#dadce0] text-[#5f6368] text-xs font-bold uppercase tracking-widest mb-8">
-              Pricing Options
-            </div>
-            <h2 className="text-4xl md:text-6xl font-black text-[#1f1f1f] mb-8 tracking-tight">사유의 가치를 투자하세요</h2>
-            <p className="text-[#5f6368] max-w-2xl mx-auto text-xl font-light">당신의 지적 여정에 가장 적합한 단계를 선택해 보세요.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            {/* Basic */}
-            <div className="p-10 rounded-[2.5rem] bg-white border border-[#dadce0] flex flex-col card-hover">
-              <div className="mb-10">
-                <h3 className="text-xl font-bold text-[#1f1f1f] mb-3">Starter</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-[#1f1f1f]">₩0</span>
-                  <span className="text-[#5f6368] text-lg font-medium">/month</span>
-                </div>
-              </div>
-              <ul className="space-y-5 mb-12 flex-1">
-                {["일일 3회 질문 탐구", "표준 AI 모델 기반", "기본 탐구 기록", "커뮤니티 지원"].map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 text-[#5f6368] text-base font-medium">
-                    <CheckCircle2 className="w-6 h-6 text-[#dadce0]" />
+              <ul className="space-y-3 my-6 flex-1">
+                {["하루 5회 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-[#5f6368] text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-[#4285f4] flex-shrink-0" />
                     {item}
                   </li>
                 ))}
               </ul>
-              <button className="w-full py-5 rounded-2xl bg-[#f8f9fa] border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f1f3f4] transition-all">
+              <button
+                onClick={() => launchApp('')}
+                className="w-full py-3 rounded-xl bg-white border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f8f9fa] transition-all text-sm">
                 무료로 시작하기
               </button>
             </div>
 
             {/* Pro */}
-            <div className="p-10 rounded-[2.5rem] bg-white border-2 border-[#4285f4] flex flex-col relative scale-105 shadow-[0_40px_80px_-15px_rgba(66,133,244,0.15)] z-10 overflow-hidden">
-              <div className="absolute top-0 right-0 px-6 py-2.5 bg-[#4285f4] text-white text-[11px] font-black uppercase tracking-widest rounded-bl-3xl">
-                Most Chosen
-              </div>
-              <div className="mb-10">
-                <h3 className="text-xl font-bold text-[#1f1f1f] mb-3">Deep Thinker</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-[#1f1f1f]">₩19,000</span>
-                  <span className="text-[#5f6368] text-lg font-medium">/month</span>
+            <div className="p-8 rounded-[2rem] bg-white border-2 border-[#4285f4] flex flex-col relative shadow-[0_24px_48px_-8px_rgba(66,133,244,0.18)] z-10">
+              <div className="inline-block px-3 py-1 rounded-full bg-[#4285f4] text-white text-xs font-bold mb-4 self-start">추천</div>
+              <div className="mb-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-black text-[#1f1f1f]">₩7,000</span>
+                  <span className="text-[#5f6368] text-sm font-medium">/월</span>
                 </div>
+                <p className="text-[#5f6368] text-sm mt-1">더 깊이 생각하고 싶을 때</p>
               </div>
-              <ul className="space-y-5 mb-12 flex-1">
-                {["제한 없는 질문 탐구", "최고 성능 추론 모델 우선권", "단계별 성장 시각화 리포트", "우선 순위 고객 지원", "광고 없는 환경", "대화 로그 내보내기"].map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 text-[#1f1f1f] text-base font-bold">
-                    <CheckCircle2 className="w-6 h-6 text-[#4285f4]" />
+              <ul className="space-y-3 my-6 flex-1">
+                {["무제한 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-[#1f1f1f] text-sm font-semibold">
+                    <CheckCircle2 className="w-4 h-4 text-[#4285f4] flex-shrink-0" />
                     {item}
                   </li>
                 ))}
               </ul>
               <button
                 onClick={() => launchApp('/pricing?action=pay-pro')}
-                className="w-full py-5 rounded-2xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-xl shadow-blue-500/25"
+                className="w-full py-3 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-lg shadow-blue-500/25 text-sm"
               >
-                멤버십 가입하기
+                Pro로 시작하기
               </button>
             </div>
 
-            {/* Academic */}
-            <div className="p-10 rounded-[2.5rem] bg-white border border-[#dadce0] flex flex-col card-hover">
-              <div className="mb-10">
-                <h3 className="text-xl font-bold text-[#1f1f1f] mb-3">Expert</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-5xl font-black text-[#1f1f1f]">₩49,000</span>
-                  <span className="text-[#5f6368] text-lg font-medium">/month</span>
+            {/* Enterprise */}
+            <div className="p-8 rounded-[2rem] bg-white border border-[#dadce0] flex flex-col card-hover">
+              <div className="inline-block px-3 py-1 rounded-full bg-[#f1f3f4] text-[#5f6368] text-xs font-bold mb-4">기관/기업</div>
+              <div className="mb-2">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-black text-[#1f1f1f]">가격 문의</span>
                 </div>
+                <p className="text-[#5f6368] text-sm mt-1">조직을 위한 맞춤 솔루션</p>
               </div>
-              <ul className="space-y-5 mb-12 flex-1">
-                {["Pro의 모든 기능 포함", "학술 인용 및 출처 분석", "고급 논리학 기반 분석 도구", "다중 사용자 공동 연구", "API 접근 권한"].map((item, i) => (
-                  <li key={i} className="flex items-center gap-4 text-[#5f6368] text-base font-medium">
-                    <CheckCircle2 className="w-6 h-6 text-[#dadce0]" />
+              <ul className="space-y-3 my-6 flex-1">
+                {["Pro보다 더 많은 사용량", "Pro의 모든 기능", "관리자 대시보드", "조직 멤버 관리", "데이터 내보내기", "전담 지원"].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3 text-[#5f6368] text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-[#4285f4] flex-shrink-0" />
                     {item}
                   </li>
                 ))}
               </ul>
-              <button className="w-full py-5 rounded-2xl bg-[#f8f9fa] border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f1f3f4] transition-all">
-                전문가용 문의하기
+              <button className="w-full py-3 rounded-xl bg-white border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f8f9fa] transition-all text-sm">
+                가격 문의하기
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section (Gemini Style Mesh) */}
-      <section className="py-32 px-6 relative">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-[#1f1f1f] rounded-[3rem] p-16 md:p-24 flex flex-col lg:flex-row items-center justify-between gap-16 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#4285f4]/20 rounded-full blur-[120px] -z-10 group-hover:scale-110 transition-transform duration-[2000ms]"></div>
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#9b51e0]/10 rounded-full blur-[100px] -z-10"></div>
-
-            <div className="max-w-xl">
-              <h2 className="text-4xl md:text-6xl font-medium text-white leading-tight">
-                지금 당신의 <span className="italic text-[#4285f4] font-serif">한계를 넘는</span> <br /> 질문을 던지세요.
-              </h2>
-            </div>
-
-            <div className="w-full lg:w-auto flex-1 max-w-2xl">
-              <div className="relative">
-                <div className="flex items-center bg-white border border-white/10 rounded-[2rem] p-3 pl-8 shadow-2xl overflow-hidden focus-within:ring-4 focus-within:ring-blue-500/20 transition-all">
-                  <input
-                    type="text"
-                    placeholder="Socrates AI에게 물어보세요"
-                    className="bg-transparent border-none outline-none text-[#1f1f1f] w-full text-xl placeholder:text-[#5f6368]/50"
-                    value={ctaPrompt}
-                    onChange={(e) => setCtaPrompt(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && launchApp(ctaPrompt)}
-                  />
-                  <button
-                    onClick={() => launchApp(ctaPrompt)}
-                    className="px-8 py-4 rounded-2xl bg-[#1f1f1f] text-white font-bold hover:bg-black transition-all shadow-xl flex items-center gap-3 group/send whitespace-nowrap"
-                  >
-                    질문 시작
-                    <Send className="w-5 h-5 group-hover/send:translate-x-1 group-hover/send:-translate-y-1 transition-transform" />
-                  </button>
-                </div>
-              </div>
+      {/* CTA Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl md:text-3xl font-black text-[#1f1f1f] mb-8 leading-tight tracking-tight">
+            지금 당신의 한계를 넘는 질문을 던지세요.
+          </h2>
+          <div className="max-w-xl mx-auto">
+            <div className="flex items-center bg-white border border-[#dadce0] rounded-[1.5rem] p-2 pl-5 shadow-lg hover:shadow-xl hover:border-[#4285f4]/40 focus-within:border-[#4285f4] focus-within:ring-4 focus-within:ring-blue-500/10 transition-all">
+              <input
+                type="text"
+                className="bg-transparent border-none outline-none text-[#1f1f1f] w-full text-sm"
+                value={ctaPrompt}
+                onChange={(e) => setCtaPrompt(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && launchApp(ctaPrompt)}
+              />
+              <button
+                onClick={() => launchApp(ctaPrompt)}
+                className="px-4 py-2.5 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-md flex items-center gap-2 whitespace-nowrap text-sm"
+              >
+                질문 시작
+                <Send className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer (Clean & Professional) */}
+      {/* Footer */}
       <footer className="bg-white border-t border-[#f1f3f4] py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20 text-[#5f6368]">
@@ -379,7 +395,7 @@ function App() {
                 <div className="w-8 h-8 rounded-lg bg-[#4285f4] flex items-center justify-center font-bold text-white">S</div>
                 <span className="text-xl font-bold text-[#1f1f1f]">Socrates AI</span>
               </div>
-              <p className="text-sm leading-relaxed mb-6 font-medium">당신의 사고를 깊이 있게 만드는 <br /> 차세대 AI 통찰 리더십 파트너.</p>
+              <p className="text-sm leading-relaxed mb-6 font-medium">당신의 사고를 깊이 있게 만드는 <br />차세대 AI 통찰 리더십 파트너.</p>
             </div>
 
             {/* Quick links */}
