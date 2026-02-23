@@ -20,6 +20,7 @@ interface QuestionFormProps {
   onDepthChange: (depth: number) => void;
   chatMode: ChatMode;
   onChatModeChange: (mode: ChatMode) => void;
+  initialProblem?: string;
 }
 
 const CATEGORIES: Category[] = [
@@ -35,7 +36,8 @@ export function QuestionForm({
   depth,
   onDepthChange,
   chatMode,
-  onChatModeChange
+  onChatModeChange,
+  initialProblem
 }: QuestionFormProps) {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -44,6 +46,12 @@ export function QuestionForm({
   const [problem, setProblem] = useState("");
   const [attemptsOrContext, setAttemptsOrContext] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<MessageFile[]>([]);
+
+  useEffect(() => {
+    if (initialProblem) {
+      setProblem(initialProblem);
+    }
+  }, [initialProblem]);
 
   // Cropper State
   const [showCropper, setShowCropper] = useState(false);
@@ -321,10 +329,6 @@ export function QuestionForm({
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
           <div className="flex flex-wrap items-center gap-4">
-            {chatMode === 'socrates' && (
-              <DepthSelector value={depth} onChange={onDepthChange} />
-            )}
-
             {/* Chat Mode Control */}
             <div className="inline-flex p-1 bg-secondary/50 rounded-lg border border-border/50">
               <button
@@ -337,7 +341,7 @@ export function QuestionForm({
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                소크라테스 모드
+                성장 모드
               </button>
               <button
                 type="button"
@@ -352,6 +356,10 @@ export function QuestionForm({
                 즉답 모드
               </button>
             </div>
+
+            {chatMode === 'socrates' && (
+              <DepthSelector value={depth} onChange={onDepthChange} />
+            )}
           </div>
 
           <Button type="submit" disabled={!isValid} className="w-full sm:w-auto rounded-xl px-8 h-11 font-semibold">

@@ -11,7 +11,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CopyButton } from "./ui/CopyButton";
 import { ChatMode } from "@/types/chat";
-import { getUserChatMode, setUserChatMode } from "@/utils/userProfile";
+import { getUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatViewProps {
@@ -34,8 +34,8 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
   const [finalAnswer, setFinalAnswer] = useState<string | null>(null);
   const [showEarlyComplete, setShowEarlyComplete] = useState(false);
   const [isEditingProblem, setIsEditingProblem] = useState(false);
-  const [chatMode, setChatMode] = useState<ChatMode>(session.chatMode || 'socrates');
   const { user } = useAuth();
+  const effectiveChatMode = session.chatMode || 'socrates';
 
 
   const handleCopyAll = async () => {
@@ -99,21 +99,6 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
     }
   }, [session.id]);
 
-  useEffect(() => {
-    const fetchMode = async () => {
-      if (user && !user.isAnonymous) {
-        const mode = await getUserChatMode(user.uid);
-        setChatMode(mode);
-        // Explicitly update session mode if not set
-        if (!session.chatMode) {
-          session.chatMode = mode;
-        }
-      }
-    };
-    if (!session.chatMode) {
-      fetchMode();
-    }
-  }, [user, session.id]);
 
   useEffect(() => {
     // 페이지 전체(window) 스크롤
@@ -250,7 +235,9 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                       <Share2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <GrowthGauge current={Math.min(session.currentStep, session.depth)} total={session.depth} />
+                  {effectiveChatMode !== 'direct' && (
+                    <GrowthGauge current={Math.min(session.currentStep, session.depth)} total={session.depth} />
+                  )}
                 </div>
               </div>
 
@@ -289,8 +276,8 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
             </div>
           )}
 
-          {session.messages.map((msg) => (
-            <ChatMessage key={msg.id} message={msg} />
+          {session.messages.map((msg, index) => (
+            <ChatMessage key={msg.id} message={msg} isDirectMode={effectiveChatMode === 'direct'} isLast={index === session.messages.length - 1} />
           ))}
 
           {isLoading && (
@@ -374,47 +361,58 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                   </div>
                 )}
 
-                {/* Early complete message (Styled independently now) */}
-                {showEarlyComplete && (
-                  <div className="flex flex-col gap-3 py-4 items-center bg-background/95 backdrop-blur-sm rounded-xl">
-                    <button
-                      onClick={handleViewAnswer}
-                      className="w-full py-3.5 px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] text-base"
-                    >
-                      정답을 확인해 보세요
-                    </button>
-                    <button
-                      onClick={() => setShowEarlyComplete(false)}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
-                    >
-                      🔍 더 탐구하기
-                    </button>
-                  </div>
-                )}
+                {(!needsVerification || isEditingProblem) && (
+                  effectiveChatMode === 'direct'
+                    ? !session.messages.some(m => m.role === 'assistant')
+                    : (!session.isResolved && !isComplete)
+                ) && (
+                    <ChatInput
+                      onSend={handleSend}
+                      isLoading={isLoading}
+                      disabled={isLoading}
+                      placeholder={
+                        isEditingProblem
+                          ? "문제를 보완할 수 있도록 입력해 주세요"
+                          : effectiveChatMode === 'direct'
+                            ? "해결하고 싶은 문제를 입력해 주세요"
+                            : "이어서 생각해 볼까요?"
+                      }
+                      autoFocus={isEditingProblem}
+                    />
+                  )}
 
-                {(!needsVerification || isEditingProblem) && !session.isResolved && !isComplete && (
-                  <ChatInput
-                    onSend={handleSend}
-                    isLoading={isLoading}
-                    disabled={isLoading}
-                    placeholder={
-                      isEditingProblem
-                        ? "문제를 보완할 수 있도록 입력해 주세요"
-                        : "이어서 생각해 볼까요?"
-                    }
-                    autoFocus={isEditingProblem}
-                  />
-                )}
 
-                {isComplete && !showEarlyComplete && !needsVerification && (
-                  <div className="flex flex-col gap-3 py-4 items-center bg-background/95 backdrop-blur-sm rounded-xl">
-                    <button
-                      onClick={handleViewAnswer}
-                      className="w-full py-3.5 px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] text-base"
-                    >
-                      정답을 확인해 보세요
-                    </button>
-                  </div>
+                {/* Direct Mode에서는 이미 정답 UI로 답변이 제공되므로 정답 확인 버튼들을 숨김 */}
+                {effectiveChatMode !== 'direct' && (
+                  <>
+                    {showEarlyComplete && (
+                      <div className="flex flex-col gap-3 py-4 items-center bg-background/95 backdrop-blur-sm rounded-xl">
+                        <button
+                          onClick={handleViewAnswer}
+                          className="w-full py-3.5 px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] text-base"
+                        >
+                          정답을 확인해 보세요
+                        </button>
+                        <button
+                          onClick={() => setShowEarlyComplete(false)}
+                          className="text-sm text-muted-foreground hover:text-foreground transition-colors mt-1"
+                        >
+                          🔍 더 탐구하기
+                        </button>
+                      </div>
+                    )}
+
+                    {isComplete && !showEarlyComplete && !needsVerification && (
+                      <div className="flex flex-col gap-3 py-4 items-center bg-background/95 backdrop-blur-sm rounded-xl">
+                        <button
+                          onClick={handleViewAnswer}
+                          className="w-full py-3.5 px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] text-base"
+                        >
+                          정답을 확인해 보세요
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useChatStorage } from "@/hooks/useChatStorage";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import { QuestionForm as QuestionFormType, MessageFile, ChatMode } from "@/types/chat";
@@ -10,7 +11,7 @@ import { QuestionForm } from "@/components/QuestionForm";
 import { ChatView } from "@/components/ChatView";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { getUserChatMode } from "@/utils/userProfile";
+import { getUserSettings, setUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
@@ -20,6 +21,7 @@ const Index = () => {
   const [depth, setDepth] = useState(3);
   const [chatMode, setChatMode] = useState<ChatMode>("socrates");
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [searchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -42,16 +44,31 @@ const Index = () => {
 
   const { canUse, remainingCount, checkAndIncrementUsage } = useUsageLimit();
 
-  // Load chat mode from user profile
+  // Load settings from user profile
   useEffect(() => {
-    const loadMode = async () => {
+    const loadSettings = async () => {
       if (user && !user.isAnonymous) {
-        const mode = await getUserChatMode(user.uid);
-        setChatMode(mode);
+        const settings = await getUserSettings(user.uid);
+        setChatMode(settings.chatMode);
+        setDepth(settings.socratesLevel);
       }
     };
-    loadMode();
+    loadSettings();
   }, [user]);
+
+  const handleDepthChange = async (newDepth: number) => {
+    setDepth(newDepth);
+    if (user && !user.isAnonymous) {
+      await setUserSettings(user.uid, { socratesLevel: newDepth });
+    }
+  };
+
+  const handleChatModeChange = async (newMode: ChatMode) => {
+    setChatMode(newMode);
+    if (user && !user.isAnonymous) {
+      await setUserSettings(user.uid, { chatMode: newMode });
+    }
+  };
 
   // Sync collapsed state with mobile/desktop transition
   useEffect(() => {
@@ -71,13 +88,8 @@ const Index = () => {
     let createdSessionId: string | null = null;
 
     try {
-      const newSession = await createSession(form, depth);
+      const newSession = await createSession(form, depth, mode);
       createdSessionId = newSession.id;
-      newSession.chatMode = mode;
-
-      if (user && !user.isAnonymous) {
-        await updateSessionMode(createdSessionId, mode);
-      }
 
       const success = await checkAndIncrementUsage(createdSessionId);
       if (!success) {
@@ -89,7 +101,6 @@ const Index = () => {
 
       let initialPrompt = "";
 
-      // 파일이 있는 경우: 이미지 검증 흐름 (Step 0)
       if (form.files && form.files.length > 0) {
         initialPrompt = `사용자가 이미지를 업로드하며 다음과 같이 질문했습니다:
         
@@ -101,8 +112,7 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
 2. 그 다음 줄바꿈 후, "[VERIFICATION_NEEDED]" 태그를 붙이세요.
 3. 그 다음, 사용자가 올린 문제가 맞는지 확인하는 질문을 하세요.
 예시: "이 문제가 맞나요? [문제 내용 요약]"`;
-      } else {
-        // 파일이 없는 경우: 바로 소크라테스 대화 시작 (Step 1)
+      } else if (mode === 'direct') {
         initialPrompt = `사용자가 다음과 같은 상황을 공유했습니다:
 
 카테고리: ${form.category}
@@ -110,7 +120,17 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
 ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
 
 1. 가장 먼저 사용자의 질문을 분석하여 세션의 제목을 "TITLE: [제목]" 형식으로 첫 줄에 출력하세요.
-2. 그 다음 줄바꿈 후, 소크라테스식 대화를 시작하기 위한 자연스럽고 친근한 첫 질문을 던져주세요.`;
+2. 그 다음 줄바꿈 후, 입력된 문제에 대해 질문 없이 바로 명확하고 구체적인 답변을 제공하세요.`;
+      } else {
+        // 성장 모드
+        initialPrompt = `사용자가 다음과 같은 상황을 공유했습니다:
+
+카테고리: ${form.category}
+문제: ${form.problem}
+${form.attempts ? `시도/배경: ${form.attempts}` : ""}
+
+1. 가장 먼저 사용자의 질문을 분석하여 세션의 제목을 "TITLE: [제목]" 형식으로 첫 줄에 출력하세요.
+2. 그 다음 줄바꿈 후, 성장 모드(소크라테스식 대화)를 시작하기 위한 자연스럽고 친근한 첫 질문을 던져주세요.`;
       }
 
       const { generateAIResponse } = await import("@/lib/claude");
@@ -126,13 +146,16 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
         await updateSessionTitle(createdSessionId, newTitle);
 
         // 응답에서 TITLE: 라인과 그 뒤의 줄바꿈/구분선 제거
-        // TITLE: ... \n --- \n 부분을 제거하거나
-        // TITLE: ... \n 부분을 제거
         cleanResponse = aiResponse.replace(/TITLE:\s*.+(\n+---\n+)?/, '').trim();
       }
 
       // AI 응답 저장 (정제된 내용)
       await addMessage(createdSessionId, { role: 'assistant', content: cleanResponse });
+
+      // 즉답 모드일 경우 바로 해결 상태로 전환 (소크라테스 모드와 동일하게 입력창 숨김)
+      if (mode === 'direct') {
+        await resolveSession(createdSessionId);
+      }
 
     } catch (err) {
       console.error("❌ 세션 생성 실패:", err);
@@ -246,9 +269,10 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
                   <QuestionForm
                     onSubmit={handleCreateSession}
                     depth={depth}
-                    onDepthChange={setDepth}
+                    onDepthChange={handleDepthChange}
                     chatMode={chatMode}
-                    onChatModeChange={setChatMode}
+                    onChatModeChange={handleChatModeChange}
+                    initialProblem={searchParams.get('problem') || ""}
                   />
                 </div>
               </div>

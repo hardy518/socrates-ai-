@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { ChatSession, Message, MessageFile, ChatMode } from "@/types/chat";
 
-const GET_SYSTEM_PROMPT = (category: string, mode: ChatMode = 'socrates') => {
+const GET_SYSTEM_PROMPT = (category: string, mode: ChatMode = 'socrates', depth: number = 3) => {
   const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
   const baseInstruction = `당신은 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다. 친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
 
@@ -9,43 +9,36 @@ const GET_SYSTEM_PROMPT = (category: string, mode: ChatMode = 'socrates') => {
     return `${baseInstruction}
     
 핵심 역할:
-- 사용자의 질문에 대해 질문 없이 바로 명확하고 구체적인 답변을 제공하세요.
+- 질문 없이 입력한 문제에 바로 명확하고 구체적인 답변을 제공하세요.
 - 불필요한 서술이나 유도 질문은 생략하고 결론부터 제시합니다.
-- 복잡한 내용은 단계별로 풀어서 설명하되, 탐구 과정이 아닌 결과를 중심으로 전달하세요.`;
+- 사용자가 즉각적인 해결책을 원하므로, 복잡한 내용도 핵심 위주로 명확하게 전달하세요.`;
   }
 
-  // Socrates Mode (Default)
-  if (isTechnical) {
-    return `${baseInstruction}
+  // Socrates Mode
+  const socratesInstruction = `${baseInstruction}
 
 당신은 소크라테스식 대화를 이끄는 조력자입니다.
 
 핵심 역할:
-- 사용자가 스스로 답을 발견하도록 유도하는 것이 최우선 과제입니다.
-- 절대 답을 직접적으로 알려주지 마세요.
-- 질문과 짧은 힌트를 조합하여 사용자가 한 단계씩 나아가게 돕습니다.
-- 대화 단계(고민 단계)가 깊어질수록 힌트를 점점 구체적으로 제공하세요.
-- 마지막 단계 직전에는 정답에 매우 가까운 결정적인 힌트를 제공하세요.
+- 답을 알려주지 말고 소크라테스식 질문으로 사용자가 스스로 답을 찾도록 유도하세요.
+- 고민 단계(${depth}단계)에 따라 질문 횟수와 힌트의 상세도를 조절합니다.
+- 사용자가 한 단계씩 나아가며 사고를 확장할 수 있도록 돕는 것이 최우선 과제입니다.
+- 절대 답을 직접적으로 알려주지 마세요.`;
+
+  if (isTechnical) {
+    return `${socratesInstruction}
 
 대화 방식:
 1. 질문 중심: 답변 대신 깊이 있는 질문을 던집니다.
 2. 예시 활용: 추상적인 개념은 구체적인 예시로 설명합니다.
-3. 힌트 조절: 사용자의 이해도에 따라 힌트의 강도를 조절합니다.`;
+3. 힌트 조절: 고민 단계(${depth}단계)가 깊어질수록 힌트를 점점 구체적으로 제공하세요. 마지막 단계 직전에는 정답에 매우 가까운 결정적인 힌트를 제공하세요.`;
   } else {
-    return `${baseInstruction}
-
-당신은 소크라테스식 대화를 이끄는 조력자입니다.
-
-핵심 역할:
-- 사용자의 생각을 확장하고 탐구할 수 있도록 돕는 것이 목적입니다.
-- 정답을 유도하지 말고, 질문만으로 대화를 진행하세요.
-- 다양한 관점에서 문제를 바라볼 수 있도록 시야를 넓혀주는 질문을 던지세요.
-- 결론을 내기보다 탐구 과정 자체을 즐길 수 있도록 유도하세요.
+    return `${socratesInstruction}
 
 대화 방식:
 1. 열린 질문: "예/아니오"로 답할 수 없는 열린 질문을 주로 사용합니다.
 2. 관점 전환: "만약 ~라면 어떨까요?"와 같은 질문으로 새로운 시각을 제시합니다.
-3. 공감과 경청: 사용자의 맥락을 충분히 이해하고 그에 기반한 질문을 합니다.`;
+3. 공감과 경청: 사용자의 맥락을 충분히 이해하고 그에 기반한 질문을 하며, 고민 단계(${depth}단계)에 맞춰 탐구의 깊이를 조절합니다.`;
   }
 };
 
@@ -91,7 +84,7 @@ export async function generateAIResponse(
     dangerouslyAllowBrowser: true
   });
 
-  const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.chatMode) + COMMON_RULES;
+  const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.chatMode, session.depth) + COMMON_RULES;
 
   // Prepare content for the current user message
   const userContent: any[] = [{ type: "text", text: userMessage }];

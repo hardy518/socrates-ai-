@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkIsPro } from "@/utils/subscription";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ const Pricing = () => {
     const navigate = useNavigate();
     const [isPro, setIsPro] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [searchParams] = useSearchParams();
 
     useEffect(() => {
         const fetchSubscription = async () => {
@@ -30,6 +31,13 @@ const Pricing = () => {
 
         fetchSubscription();
     }, [user]);
+
+    // Handle automatic pro plan trigger from landing page
+    useEffect(() => {
+        if (!loading && searchParams.get('action') === 'pay-pro') {
+            handleProPlan();
+        }
+    }, [loading, searchParams]);
 
     const handleBasicPlan = async () => {
         console.log("handleBasicPlan clicked. User:", user?.uid, "isPro:", isPro);

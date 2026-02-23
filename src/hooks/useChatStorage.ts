@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChatSession, Message, QuestionForm, MessageFile } from '@/types/chat';
+import { ChatSession, Message, QuestionForm, MessageFile, ChatMode } from '@/types/chat';
 
 export function useChatStorage() {
   const { user } = useAuth();
@@ -75,7 +75,7 @@ export function useChatStorage() {
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || null;
 
-  const createSession = useCallback(async (form: QuestionForm, depth: number): Promise<ChatSession> => {
+  const createSession = useCallback(async (form: QuestionForm, depth: number, mode: ChatMode): Promise<ChatSession> => {
     if (!user) {
       throw new Error('로그인이 필요합니다');
     }
@@ -91,6 +91,7 @@ export function useChatStorage() {
       currentStep: 0,
       messages: [],
       isResolved: false,
+      chatMode: mode,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -101,7 +102,7 @@ export function useChatStorage() {
       const createdSession: ChatSession = {
         id: docRef.id,
         title: newSession.title,
-        category: newSession.category,
+        category: newSession.category as any,
         problem: newSession.problem,
         attempts: newSession.attempts,
 
@@ -109,6 +110,7 @@ export function useChatStorage() {
         currentStep: 0,
         messages: [],
         isResolved: false,
+        chatMode: mode,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };

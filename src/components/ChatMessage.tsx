@@ -6,9 +6,11 @@ import { CopyButton } from "./ui/CopyButton";
 
 interface ChatMessageProps {
   message: Message;
+  isDirectMode?: boolean;
+  isLast?: boolean;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, isDirectMode, isLast }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   const formatFileSize = (bytes: number) => {
@@ -53,8 +55,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
           )}
         </div>
       ) : (
-        // AI 메시지 - 말풍선 없이 텍스트만
-        <div className="max-w-[80%] group relative">
+        // AI 메시지 - 말풍선 없이 텍스트만 (단, 즉답 모드이고 마지막 메시지일 경우 정답 UI 스타일 적용)
+        <div className={`${isDirectMode ? "w-full" : "max-w-[80%]"} group relative`}>
           {message.files && message.files.length > 0 && (
             <div className="space-y-2 mb-3">
               {message.files.map(file => (
@@ -82,17 +84,38 @@ export function ChatMessage({ message }: ChatMessageProps) {
             </div>
           )}
           {message.content && (
-            <div className="relative">
-              <div className="prose-markdown">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {message.content}
-                </ReactMarkdown>
+            isDirectMode ? (
+              <div className="bg-secondary/30 rounded-xl p-5 space-y-3 border border-border shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300 group/answer relative w-full">
+                <div className="flex items-center justify-between text-primary mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm font-semibold">해결 방향</span>
+                  </div>
+                  <CopyButton
+                    content={message.content}
+                    className="bg-background/50 hover:bg-accent text-accent-foreground"
+                  />
+                </div>
+                <div className="text-sm text-foreground leading-relaxed">
+                  <div className="prose-markdown">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
               </div>
-              <CopyButton
-                content={message.content}
-                className="absolute top-0 -right-12 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
-              />
-            </div>
+            ) : (
+              <div className="relative">
+                <div className="prose-markdown">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
+                <CopyButton
+                  content={message.content}
+                  className="absolute top-0 -right-12 opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex"
+                />
+              </div>
+            )
           )}
         </div>
       )}
