@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Plus, X, FileIcon, ImageIcon, Camera, Image as ImageIconLucide, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DepthSelector } from "./DepthSelector";
-import { QuestionForm as QuestionFormType, Category, MessageFile } from "@/types/chat";
+import { QuestionForm as QuestionFormType, Category, MessageFile, ChatMode } from "@/types/chat";
 import { cn } from "@/lib/utils";
 import { ImageCropper } from "./ImageCropper";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,9 +15,11 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface QuestionFormProps {
-  onSubmit: (form: QuestionFormType, depth: number) => void;
+  onSubmit: (form: QuestionFormType, depth: number, mode: ChatMode) => void;
   depth: number;
   onDepthChange: (depth: number) => void;
+  chatMode: ChatMode;
+  onChatModeChange: (mode: ChatMode) => void;
 }
 
 const CATEGORIES: Category[] = [
@@ -31,7 +33,9 @@ const CATEGORIES: Category[] = [
 export function QuestionForm({
   onSubmit,
   depth,
-  onDepthChange
+  onDepthChange,
+  chatMode,
+  onChatModeChange
 }: QuestionFormProps) {
   const { t } = useLanguage();
   const isMobile = useIsMobile();
@@ -168,7 +172,7 @@ export function QuestionForm({
       problem: problem.trim(),
       attempts: attemptsOrContext.trim(),
       files: attachedFiles.length > 0 ? attachedFiles : undefined
-    }, depth);
+    }, depth, chatMode);
   };
 
   const isValid = problem.trim();
@@ -315,10 +319,42 @@ export function QuestionForm({
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-4">
-          <DepthSelector value={depth} onChange={onDepthChange} />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+          <div className="flex flex-wrap items-center gap-4">
+            {chatMode === 'socrates' && (
+              <DepthSelector value={depth} onChange={onDepthChange} />
+            )}
 
-          <Button type="submit" disabled={!isValid} className="rounded-xl px-6 h-11 font-semibold">
+            {/* Chat Mode Control */}
+            <div className="inline-flex p-1 bg-secondary/50 rounded-lg border border-border/50">
+              <button
+                type="button"
+                onClick={() => onChatModeChange('socrates')}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                  chatMode === 'socrates'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                소크라테스 모드
+              </button>
+              <button
+                type="button"
+                onClick={() => onChatModeChange('direct')}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-semibold rounded-md transition-all",
+                  chatMode === 'direct'
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                즉답 모드
+              </button>
+            </div>
+          </div>
+
+          <Button type="submit" disabled={!isValid} className="w-full sm:w-auto rounded-xl px-8 h-11 font-semibold">
             질문하기
           </Button>
         </div>

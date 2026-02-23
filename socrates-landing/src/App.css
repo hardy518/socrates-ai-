@@ -1,0 +1,18 @@
+/* Main styles for the landing page */
+.glass {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient-premium {
+  background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.15), transparent),
+              radial-gradient(circle at bottom right, rgba(30, 64, 175, 0.1), transparent);
+}

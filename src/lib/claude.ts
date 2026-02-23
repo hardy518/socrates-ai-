@@ -1,15 +1,24 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ChatSession, Message, MessageFile } from "@/types/chat";
+import type { ChatSession, Message, MessageFile, ChatMode } from "@/types/chat";
 
-const GET_SYSTEM_PROMPT = (category: string) => {
+const GET_SYSTEM_PROMPT = (category: string, mode: ChatMode = 'socrates') => {
   const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
+  const baseInstruction = `당신은 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다. 친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
 
-  const baseInstruction = `당신은 소크라테스식 대화를 이끄는 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다.
-  
-친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
+  if (mode === 'direct') {
+    return `${baseInstruction}
+    
+핵심 역할:
+- 사용자의 질문에 대해 질문 없이 바로 명확하고 구체적인 답변을 제공하세요.
+- 불필요한 서술이나 유도 질문은 생략하고 결론부터 제시합니다.
+- 복잡한 내용은 단계별로 풀어서 설명하되, 탐구 과정이 아닌 결과를 중심으로 전달하세요.`;
+  }
 
+  // Socrates Mode (Default)
   if (isTechnical) {
     return `${baseInstruction}
+
+당신은 소크라테스식 대화를 이끄는 조력자입니다.
 
 핵심 역할:
 - 사용자가 스스로 답을 발견하도록 유도하는 것이 최우선 과제입니다.
@@ -25,11 +34,13 @@ const GET_SYSTEM_PROMPT = (category: string) => {
   } else {
     return `${baseInstruction}
 
+당신은 소크라테스식 대화를 이끄는 조력자입니다.
+
 핵심 역할:
 - 사용자의 생각을 확장하고 탐구할 수 있도록 돕는 것이 목적입니다.
 - 정답을 유도하지 말고, 질문만으로 대화를 진행하세요.
 - 다양한 관점에서 문제를 바라볼 수 있도록 시야를 넓혀주는 질문을 던지세요.
-- 결론을 내기보다 탐구 과정 자체를 즐길 수 있도록 유도하세요.
+- 결론을 내기보다 탐구 과정 자체을 즐길 수 있도록 유도하세요.
 
 대화 방식:
 1. 열린 질문: "예/아니오"로 답할 수 없는 열린 질문을 주로 사용합니다.
@@ -80,7 +91,7 @@ export async function generateAIResponse(
     dangerouslyAllowBrowser: true
   });
 
-  const systemPrompt = GET_SYSTEM_PROMPT(session.category) + COMMON_RULES;
+  const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.chatMode) + COMMON_RULES;
 
   // Prepare content for the current user message
   const userContent: any[] = [{ type: "text", text: userMessage }];

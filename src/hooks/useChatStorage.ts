@@ -55,6 +55,7 @@ export function useChatStorage() {
             currentStep: data.currentStep,
             messages: data.messages || [],
             isResolved: data.isResolved || false,
+            chatMode: data.chatMode || "socrates",
             createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
             updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now(),
           } as ChatSession;
@@ -213,6 +214,19 @@ export function useChatStorage() {
     }
   }, [user]);
 
+  const updateSessionMode = useCallback(async (sessionId: string, mode: string) => {
+    if (!user) return;
+    try {
+      const sessionRef = doc(db, 'conversations', sessionId);
+      await updateDoc(sessionRef, {
+        chatMode: mode,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('세션 모드 업데이트 실패:', error);
+    }
+  }, [user]);
+
   return {
     sessions,
     activeSession,
@@ -224,6 +238,7 @@ export function useChatStorage() {
     deleteSession,
     clearActiveSession,
     updateSessionTitle,
+    updateSessionMode,
     isLoading,
   };
 }

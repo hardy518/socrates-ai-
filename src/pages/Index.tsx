@@ -1,22 +1,28 @@
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useChatStorage } from "@/hooks/useChatStorage";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
-import { QuestionForm as QuestionFormType, MessageFile } from "@/types/chat";
+import { QuestionForm as QuestionFormType, MessageFile, ChatMode } from "@/types/chat";
 import { Sidebar } from "@/components/Sidebar";
+import { MobileSidebar } from "@/components/MobileSidebar";
 import { InitialGuide } from "@/components/InitialGuide";
 import { QuestionForm } from "@/components/QuestionForm";
 import { ChatView } from "@/components/ChatView";
-import { AdSlot } from "@/components/AdSlot";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getUserChatMode } from "@/utils/userProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 
 const Index = () => {
   const { t } = useLanguage();
   const [depth, setDepth] = useState(3);
+  const [chatMode, setChatMode] = useState<ChatMode>("socrates");
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const {
     sessions,
@@ -28,12 +34,34 @@ const Index = () => {
     resolveSession,
     deleteSession,
     clearActiveSession,
-    updateSessionTitle
+    updateSessionTitle,
+    updateSessionMode
   } = useChatStorage();
+
+  const { user } = useAuth();
 
   const { canUse, remainingCount, checkAndIncrementUsage } = useUsageLimit();
 
-  const handleCreateSession = async (form: QuestionFormType, depth: number) => {
+  // Load chat mode from user profile
+  useEffect(() => {
+    const loadMode = async () => {
+      if (user && !user.isAnonymous) {
+        const mode = await getUserChatMode(user.uid);
+        setChatMode(mode);
+      }
+    };
+    loadMode();
+  }, [user]);
+
+  // Sync collapsed state with mobile/desktop transition
+  useEffect(() => {
+    setIsSidebarCollapsed(isMobile);
+    if (!isMobile) {
+      setIsMobileSidebarOpen(false);
+    }
+  }, [isMobile]);
+
+  const handleCreateSession = async (form: QuestionFormType, depth: number, mode: ChatMode) => {
     if (!canUse) {
       toast.error(t('dailyLimitReached'));
       return;
@@ -45,6 +73,11 @@ const Index = () => {
     try {
       const newSession = await createSession(form, depth);
       createdSessionId = newSession.id;
+      newSession.chatMode = mode;
+
+      if (user && !user.isAnonymous) {
+        await updateSessionMode(createdSessionId, mode);
+      }
 
       const success = await checkAndIncrementUsage(createdSessionId);
       if (!success) {
@@ -140,24 +173,36 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      {/* Desktop Sidebar (Only visible on SM and above) */}
+      <div className="hidden sm:flex flex-shrink-0">
+        <Sidebar
+          sessions={sessions}
+          activeSessionId={activeSessionId}
+          onSelectSession={setActiveSessionId}
+          onNewSession={clearActiveSession}
+          onDeleteSession={deleteSession}
+          onUpdateTitle={updateSessionTitle}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+      </div>
 
-
-      {/* Desktop Sidebar */}
-      <Sidebar
+      {/* Mobile Drawer (Hidden on MD+, trigger is in ChatView) */}
+      <MobileSidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
         onSelectSession={setActiveSessionId}
         onNewSession={clearActiveSession}
         onDeleteSession={deleteSession}
         onUpdateTitle={updateSessionTitle}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        open={isMobileSidebarOpen}
+        onOpenChange={setIsMobileSidebarOpen}
       />
 
-      {/* Main Content + Ad */}
-      <div className="flex-1 flex min-w-0">
-        <main className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen relative overflow-hidden">
+        <main className="flex-1 flex flex-col min-w-0 h-full relative">
           {activeSession ? (
             <ChatView
               session={activeSession}
@@ -165,19 +210,51 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
               onSendAIMessage={handleSendAIMessage}
               onResolve={handleResolve}
               isInitialLoading={isCreatingSession}
+              onMenuClick={() => setIsMobileSidebarOpen(true)}
             />
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] px-6">
-              <div className="max-w-2xl w-full space-y-6">
-                <h1 className="text-4xl font-bold text-foreground">{t('mainTitle')}</h1>
-                <QuestionForm onSubmit={handleCreateSession} depth={depth} onDepthChange={setDepth} />
+            <div className="flex-1 flex flex-col min-w-0 bg-background relative overflow-y-auto h-full">
+              {/* Mobile Menu Trigger for Initial View */}
+              <div className="sm:hidden flex items-center p-4 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur-sm z-30 w-full transition-all">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-lg hover:bg-secondary"
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                >
+                  <Menu className="w-5 h-5 text-muted-foreground" />
+                </Button>
+                <div className="flex items-center gap-2 ml-3">
+                  <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-sm bg-primary" />
+                  </div>
+                  <span className="font-bold text-lg tracking-tight text-foreground">Socrates</span>
+                </div>
+              </div>
+
+              <div className="flex-1 flex flex-col items-center justify-center py-12 px-6">
+                <div className="max-w-4xl w-full space-y-8">
+                  <div className="space-y-4 text-center sm:text-left">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text">
+                      {t('mainTitle')}
+                    </h1>
+                    <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl font-medium leading-relaxed">
+                      어떤 문제든 소크라테스처럼 함께 고민해 드릴게요.
+                    </p>
+                  </div>
+
+                  <QuestionForm
+                    onSubmit={handleCreateSession}
+                    depth={depth}
+                    onDepthChange={setDepth}
+                    chatMode={chatMode}
+                    onChatModeChange={setChatMode}
+                  />
+                </div>
               </div>
             </div>
           )}
         </main>
-
-        {/* Ad Slot */}
-        <AdSlot />
       </div>
     </div>
   );

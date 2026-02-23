@@ -15,6 +15,7 @@ export interface Message {
 }
 
 export type Category = "수학ㆍ과학" | "코딩" | "비즈니스ㆍ기획" | "글쓰기ㆍ외국어" | "데이터ㆍ분석";
+export type ChatMode = 'socrates' | 'direct';
 
 export interface ChatSession {
   id: string;
@@ -27,6 +28,7 @@ export interface ChatSession {
   currentStep: number;
   messages: Message[];
   isResolved: boolean;
+  chatMode?: ChatMode;
   createdAt: number;
   updatedAt: number;
 }
