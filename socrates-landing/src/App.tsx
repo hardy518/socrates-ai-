@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp } from 'lucide-react';
 import './App.css';
 
@@ -104,7 +105,7 @@ function App() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-4 md:pt-48 md:pb-6 overflow-hidden px-6">
+      <section id="hero" className="relative pt-32 pb-4 md:pt-48 md:pb-6 overflow-hidden px-6">
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-[0.95] mb-6 text-gradient tracking-tighter">
             Think<br />deeper.
@@ -281,7 +282,7 @@ function App() {
             <p className="text-[#5f6368] max-w-xl mx-auto text-base font-light">당신의 지적 여정에 가장 적합한 단계를 선택해 보세요.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {/* Starter */}
             <div className="p-8 rounded-[2rem] bg-white border border-[#dadce0] flex flex-col card-hover">
               <div className="inline-block px-3 py-1 rounded-full bg-[#f1f3f4] text-[#5f6368] text-xs font-bold mb-4">무료</div>
@@ -359,7 +360,7 @@ function App() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-6">
+      <section className="py-16 px-6 bg-[#f8f9fa]">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-black text-[#1f1f1f] mb-8 leading-tight tracking-tight">
             지금 당신의 한계를 넘는 질문을 던지세요.
@@ -386,55 +387,50 @@ function App() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#f1f3f4] py-20 px-6">
+      <footer className="bg-white border-t border-[#f1f3f4] pt-16 pb-8 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20 text-[#5f6368]">
-            {/* Brand column */}
-            <div className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-8 h-8 rounded-lg bg-[#4285f4] flex items-center justify-center font-bold text-white">S</div>
-                <span className="text-xl font-bold text-[#1f1f1f]">Socrates AI</span>
+          {/* Main grid */}
+          <div className="flex flex-col md:flex-row justify-between gap-12 mb-12">
+
+            {/* Left: Brand name only */}
+            <div className="flex-shrink-0">
+              <span className="text-base font-bold text-[#1f1f1f]">Socrates AI</span>
+            </div>
+
+            {/* Right: 3 columns */}
+            <div className="flex flex-wrap gap-12 md:gap-20 text-sm">
+
+              {/* 제품 */}
+              <div>
+                <h4 className="text-xs font-bold text-[#1f1f1f] mb-5 tracking-widest uppercase">제품</h4>
+                <ul className="space-y-4 text-[#5f6368]">
+                  <li><a href="#features" className="hover:text-[#4285f4] transition-colors">기능 안내</a></li>
+                  <li><a href="#demo" className="hover:text-[#4285f4] transition-colors">적용 카테고리</a></li>
+                  <li><a href="#hero" className="hover:text-[#4285f4] transition-colors">체험하기</a></li>
+                </ul>
               </div>
-              <p className="text-sm leading-relaxed mb-6 font-medium">당신의 사고를 깊이 있게 만드는 <br />차세대 AI 통찰 리더십 파트너.</p>
-            </div>
 
-            {/* Quick links */}
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold text-[#1f1f1f] uppercase tracking-widest">제품</h4>
-              <ul className="space-y-4 text-sm font-medium">
-                <li><a href="#" className="hover:text-[#4285f4] transition-colors">기능 안내</a></li>
-                <li><a href="#" className="hover:text-[#4285f4] transition-colors">적용 카테고리</a></li>
-                <li><a href="#" className="hover:text-[#4285f4] transition-colors">실시간 데모</a></li>
-              </ul>
-            </div>
+              {/* 약관 */}
+              <div>
+                <h4 className="text-xs font-bold text-[#1f1f1f] mb-5 tracking-widest uppercase">약관</h4>
+                <ul className="space-y-4 text-[#5f6368]">
+                  <li><Link to="/terms-of-service" className="hover:text-[#4285f4] transition-colors">이용약관</Link></li>
+                  <li><Link to="/privacy-policy" className="hover:text-[#4285f4] transition-colors">개인정보처리방침</Link></li>
+                  <li><Link to="/third-party" className="hover:text-[#4285f4] transition-colors">제3자 제공 안내</Link></li>
+                  <li><Link to="/refund-policy" className="hover:text-[#4285f4] transition-colors">취소 및 환불 규정</Link></li>
+                </ul>
+              </div>
 
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold text-[#1f1f1f] uppercase tracking-widest">회사</h4>
-              <ul className="space-y-4 text-sm font-medium">
-                <li><a href="#" className="hover:text-[#4285f4] transition-colors">뉴이어 회사소개</a></li>
-                <li><a href="#" className="hover:text-[#4285f4] transition-colors">프라이버시 정책</a></li>
-                <li><a href="#" className="hover:text-[#4285f4] transition-colors">이용 약관</a></li>
-              </ul>
-            </div>
 
-            <div className="space-y-6">
-              <h4 className="text-sm font-bold text-[#1f1f1f] uppercase tracking-widest">문의</h4>
-              <p className="text-sm font-medium leading-relaxed">010-9369-5349 <br />cs@newyears.kr</p>
             </div>
           </div>
 
-          <div className="pt-12 border-t border-[#f1f3f4]">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
-              <div className="flex flex-col gap-4 text-[13px] font-medium text-[#5f6368]">
-                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                  <span className="font-bold text-[#1f1f1f]">뉴이어 (NewYear)</span>
-                  <span>대표: 최용호</span>
-                  <span>사업자등록번호: 778-27-01716</span>
-                </div>
-                <p>경기도 부천시 원미구 소향로 223, 1519호</p>
-              </div>
-              <p className="text-xs text-[#5f6368]/50">ⓒ 2025 뉴이어 (NewYear). All rights reserved.</p>
-            </div>
+          {/* Bottom bar */}
+          <div className="border-t border-[#f1f3f4] pt-6">
+            <p className="text-xs text-[#9aa0a6] leading-relaxed">
+              (주)뉴이어 | 대표: 최용호 | 사업자등록번호: 778-27-01716 | 010-9369-5349 | 경기도 부천시 원미구 소향로 223, 1519호
+            </p>
+            <p className="text-xs text-[#9aa0a6] mt-1">ⓒ 2025 뉴이어 (NewYear). All rights reserved.</p>
           </div>
         </div>
       </footer>

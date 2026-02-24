@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkIsPro } from "@/utils/subscription";
 import { toast } from "sonner";
-import { loadTossPayments } from "@tosspayments/payment-sdk";
 
 const Pricing = () => {
     const { user, signInWithGoogle } = useAuth();
@@ -85,22 +84,8 @@ const Pricing = () => {
         }
 
         try {
-            const clientKey = import.meta.env.VITE_TOSS_CLIENT_KEY;
-            if (!clientKey) {
-                toast.error("결제 설정이 누락되었습니다. (VITE_TOSS_CLIENT_KEY)");
-                return;
-            }
-
-            const tossPayments = await loadTossPayments(clientKey);
-            const orderId = `ORDER_${Date.now()}_${user.uid}`;
-
-            await tossPayments.requestPayment("카드", {
-                amount: 9900,
-                orderId: orderId,
-                orderName: "Socrates AI Pro 플랜",
-                successUrl: `${window.location.origin}/payment-success?orderId=${orderId}`,
-                failUrl: `${window.location.origin}/payment-fail`,
-            });
+            // TODO: 결제 모듈 연동 예정
+            toast.info("현재 결제 준비 중입니다. 잠시 후 다시 시도해 주세요.");
         } catch (error) {
             console.error("Payment request failed:", error);
             toast.error("결제 창을 여는 데 실패했습니다.");
