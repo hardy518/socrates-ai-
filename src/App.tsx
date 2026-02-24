@@ -11,6 +11,8 @@ import Pricing from "./pages/Pricing";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFail from "./pages/PaymentFail";
 
+import { useEffect } from "react";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -35,6 +37,5 @@ const App = () => (
     </AuthProvider>
   </QueryClientProvider>
 );
-
 
 export default App;

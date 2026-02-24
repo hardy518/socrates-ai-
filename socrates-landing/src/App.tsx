@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp } from 'lucide-react';
+import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp, LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
+import * as ChannelService from "@channel.io/channel-web-sdk-loader";
+import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
 const CATEGORIES = [
@@ -49,15 +51,17 @@ const CATEGORIES = [
 function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [heroPrompt, setHeroPrompt] = useState('');
   const [ctaPrompt, setCtaPrompt] = useState('');
   const [activeCategory, setActiveCategory] = useState(0);
 
   const launchApp = (queryOrPath?: string) => {
-    const mainAppUrl = window.location.hostname === 'localhost' ? 'http://localhost:8080' : '';
+    const mainAppUrl = 'https://ai-socratestalk.netlify.app';
 
     if (!queryOrPath) {
-      window.location.href = mainAppUrl || '/';
+      window.location.href = mainAppUrl;
       return;
     }
 
@@ -68,6 +72,39 @@ function App() {
 
     window.location.href = `${mainAppUrl}?problem=${encodeURIComponent(queryOrPath)}`;
   };
+
+  const { user, signInWithGoogle, signOut } = useAuth();
+
+  useEffect(() => {
+    ChannelService.loadScript();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      ChannelService.boot({
+        pluginKey: import.meta.env.VITE_CHANNEL_TALK_PLUGIN_KEY,
+        memberId: user.uid,
+        profile: {
+          name: user.displayName || "",
+          email: user.email || "",
+        }
+      });
+    } else {
+      ChannelService.boot({
+        pluginKey: import.meta.env.VITE_CHANNEL_TALK_PLUGIN_KEY,
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,20 +125,142 @@ function App() {
 
           <div className="hidden md:flex items-center gap-10 text-sm font-medium text-[#5f6368]">
             <a href="#features" className="hover:text-[#4285f4] transition-colors">기능</a>
-            <a href="#how-it-works" className="hover:text-[#4285f4] transition-colors">방법</a>
+            <a href="#demo" className="hover:text-[#4285f4] transition-colors">방법</a>
             <a href="#pricing" className="hover:text-[#4285f4] transition-colors">요금제</a>
-            <button
-              onClick={() => launchApp('')}
-              className="px-6 py-2.5 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-md hover:shadow-xl active:scale-95"
-            >
-              시작하기
-            </button>
+
+            {user ? (
+              <div className="flex items-center gap-4">
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <UserIcon size={16} className="text-[#5f6368]" />
+                    <span className="text-[#1f1f1f]">{user.displayName || '사용자'}님</span>
+                    <ChevronDown size={14} className={`text-[#5f6368] transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {profileDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-[#dadce0] rounded-2xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-200">
+                      <div className="px-4 py-2 border-b border-[#f1f3f4] mb-1">
+                        <p className="text-xs text-[#5f6368]">계정 정보</p>
+                        <p className="text-sm font-semibold text-[#1f1f1f] truncate">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          signOut();
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors text-left cursor-pointer"
+                      >
+                        <LogOut size={16} />
+                        로그아웃
+                      </button>
+                      <div className="mt-1 pt-1 border-t border-[#f1f3f4]">
+                        <button
+                          onClick={() => {
+                            launchApp('');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#1f1f1f] hover:bg-gray-50 transition-colors text-left cursor-pointer"
+                        >
+                          <Target size={16} />
+                          메인 서비스로 이동
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => launchApp('')}
+                  className="px-6 py-2.5 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-md hover:shadow-xl active:scale-95 cursor-pointer font-bold"
+                >
+                  체험하기
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => signInWithGoogle()}
+                  className="px-4 py-2 text-sm font-medium text-[#5f6368] hover:text-[#1f1f1f] hover:bg-gray-100/50 rounded-full transition-all cursor-pointer"
+                >
+                  로그인
+                </button>
+                <button
+                  onClick={() => launchApp('')}
+                  className="px-6 py-2.5 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-md hover:shadow-xl active:scale-95 cursor-pointer font-bold"
+                >
+                  체험하기
+                </button>
+              </div>
+            )}
           </div>
 
           <button className="md:hidden text-[#1f1f1f]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden glass border-t border-[#dadce0]/30 animate-in slide-in-from-top duration-300">
+            <div className="px-6 py-8 flex flex-col gap-6 font-medium text-[#1f1f1f]">
+              <a href="#features" onClick={() => setMobileMenuOpen(false)}>기능</a>
+              <a href="#demo" onClick={() => setMobileMenuOpen(false)}>방법</a>
+              <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>요금제</a>
+              <div className="pt-4 border-t border-[#dadce0]/30 flex flex-col gap-4">
+                {user ? (
+                  <>
+                    <div className="flex items-center gap-3 text-sm text-[#5f6368]">
+                      <UserIcon size={18} />
+                      <span>{user.displayName || '사용자'}님</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 text-sm text-red-500 cursor-pointer"
+                    >
+                      <LogOut size={18} />
+                      로그아웃
+                    </button>
+                    <button
+                      onClick={() => {
+                        launchApp('');
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full py-3 rounded-full bg-[#1f1f1f] text-white text-center shadow-lg cursor-pointer font-bold"
+                    >
+                      체험하기
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        signInWithGoogle();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full py-3 text-sm text-[#5f6368] font-medium transition-all cursor-pointer"
+                    >
+                      로그인
+                    </button>
+                    <button
+                      onClick={() => {
+                        launchApp('');
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full py-3 rounded-full bg-[#1f1f1f] text-white text-center shadow-lg cursor-pointer font-bold"
+                    >
+                      체험하기
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}

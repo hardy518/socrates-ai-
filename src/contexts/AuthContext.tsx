@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { 
-  User, 
-  signInWithPopup, 
+import {
+  User,
+  signInWithPopup,
   signInAnonymously, // ← 추가!
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     };
-    
+
     autoSignIn();
   }, [user, loading]);
 
@@ -74,12 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      signInWithGoogle, 
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      signInWithGoogle,
       signInAnonymously: signInAnonymouslyManual, // ← 추가!
-      signOut 
+      signOut
     }}>
       {children}
     </AuthContext.Provider>
