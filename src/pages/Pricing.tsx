@@ -3,6 +3,13 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkIsPro } from "@/utils/subscription";
 import { toast } from "sonner";
+import { setProPlan } from "@/utils/subscription";
+
+declare global {
+    interface Window {
+        PortOne: any;
+    }
+}
 
 const Pricing = () => {
     const { user, signInWithGoogle } = useAuth();
@@ -84,11 +91,54 @@ const Pricing = () => {
         }
 
         try {
-            // TODO: 결제 모듈 연동 예정
-            toast.info("현재 결제 준비 중입니다. 잠시 후 다시 시도해 주세요.");
+            const customerId = user.uid;
+
+            const response = await window.PortOne.requestIssueBillingKey({
+                storeId: import.meta.env.VITE_PORTONE_STORE_ID,
+                channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
+                issueId: crypto.randomUUID(),
+                billingKeyMethod: "CARD",
+                issueName: "소크라테스 AI Pro 정기구독",
+                customer: {
+                    customerId: customerId,
+                    fullName: user.displayName || "User",
+                    email: user.email || undefined,
+                    phoneNumber: import.meta.env.VITE_TEST_PHONE_NUMBER || "01000000000",
+                },
+            });
+
+            if (response.code !== undefined) {
+                // Error occurred
+                toast.error(`결제 준비 중 오류가 발생했습니다: ${response.message}`);
+                return;
+            }
+
+            const { billingKey } = response;
+
+            // Call backend to process initial payment and save billing key
+            const subscribeResponse = await fetch('/.netlify/functions/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: user.uid,
+                    billingKey: billingKey,
+                }),
+            });
+
+            const result = await subscribeResponse.json();
+
+            if (subscribeResponse.ok) {
+                toast.success("구독이 시작되었습니다! 이제 Pro 기능을 이용하실 수 있습니다.");
+                setIsPro(true);
+                setTimeout(() => navigate("/"), 2000);
+            } else {
+                toast.error(result.message || "구독 처리 중 오류가 발생했습니다.");
+            }
         } catch (error) {
-            console.error("Payment request failed:", error);
-            toast.error("결제 창을 여는 데 실패했습니다.");
+            console.error("Payment issuance failed:", error);
+            toast.error("결제 요청 중 예기치 못한 오류가 발생했습니다.");
         }
     };
 
@@ -193,7 +243,8 @@ const Pricing = () => {
                         <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">기관/기업</div>
                         <div className="mb-2">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black text-slate-900 dark:text-white">가격 문의</span>
+                                <span className="text-2xl font-black text-slate-900 dark:text-white">₩7,000</span>
+                                <span className="text-slate-500 text-sm font-medium">/ 1인 · 월</span>
                             </div>
                             <p className="text-slate-500 text-sm mt-1">조직을 위한 맞춤 솔루션</p>
                         </div>
@@ -205,8 +256,10 @@ const Pricing = () => {
                                 </li>
                             ))}
                         </ul>
-                        <button className="w-full py-3 rounded-xl bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
-                            가격 문의하기
+                        <button
+                            onClick={() => window.open('https://socratestutor.channel.io', '_blank')}
+                            className="w-full py-3 rounded-xl bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
+                            도입 문의하기
                         </button>
                     </div>
                 </div>

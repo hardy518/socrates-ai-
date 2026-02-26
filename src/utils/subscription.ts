@@ -12,9 +12,10 @@ export interface Subscription {
     status: 'active';
     startDate: Timestamp;
     endDate: Timestamp;
-    tossPaymentKey?: string;
     orderId?: string;
     stripeSubscriptionId?: string;
+    billingKey?: string;
+    nextScheduledAt?: Timestamp;
 }
 
 /**
@@ -34,9 +35,14 @@ export const getSubscription = async (userId: string): Promise<Subscription | nu
 };
 
 /**
- * Pro 플랜 설정 (Toss Payments 대응)
+ * Pro 플랜 설정
  */
-export const setProPlan = async (userId: string, paymentData: { paymentKey?: string, orderId?: string, stripeSubscriptionId?: string }) => {
+export const setProPlan = async (userId: string, paymentData: {
+    orderId?: string,
+    stripeSubscriptionId?: string,
+    billingKey?: string,
+    nextScheduledAt?: Timestamp
+}) => {
     try {
         const startDate = Timestamp.now();
         const endDate = new Timestamp(startDate.seconds + 30 * 24 * 60 * 60, 0); // 기본 30일
@@ -46,9 +52,10 @@ export const setProPlan = async (userId: string, paymentData: { paymentKey?: str
             status: 'active',
             startDate: startDate,
             endDate: endDate,
-            tossPaymentKey: paymentData.paymentKey,
             orderId: paymentData.orderId,
             stripeSubscriptionId: paymentData.stripeSubscriptionId,
+            billingKey: paymentData.billingKey,
+            nextScheduledAt: paymentData.nextScheduledAt,
         };
 
         await setDoc(doc(db, "users", userId, "subscription", "current"), subData);

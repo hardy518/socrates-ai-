@@ -3,7 +3,14 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp, LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
 import * as ChannelService from "@channel.io/channel-web-sdk-loader";
 import { useAuth } from './contexts/AuthContext';
+import { toast, Toaster } from 'sonner';
 import './App.css';
+
+declare global {
+  interface Window {
+    PortOne: any;
+  }
+}
 
 const CATEGORIES = [
   {
@@ -71,6 +78,73 @@ function App() {
     }
 
     window.location.href = `${mainAppUrl}?problem=${encodeURIComponent(queryOrPath)}`;
+  };
+
+  const handleProPlan = async () => {
+    if (!user) {
+      try {
+        await signInWithGoogle();
+        // Login success, but we should probably wait for user state to update or just show toast
+        toast.info("로그인이 완료되었습니다. 다시 한번 클릭하여 결제를 진행해주세요.");
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("로그인에 실패했습니다.");
+      }
+      return;
+    }
+
+    try {
+      const customerId = user.uid;
+
+      const response = await window.PortOne.requestIssueBillingKey({
+        storeId: import.meta.env.VITE_PORTONE_STORE_ID,
+        channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
+        issueId: crypto.randomUUID(),
+        billingKeyMethod: "CARD",
+        issueName: "소크라테스 AI Pro 정기구독",
+        customer: {
+          customerId: customerId,
+          fullName: user.displayName || "User",
+          email: user.email || undefined,
+          phoneNumber: import.meta.env.VITE_TEST_PHONE_NUMBER || "01000000000",
+        },
+      });
+
+      if (response.code !== undefined) {
+        toast.error(`결제 준비 중 오류가 발생했습니다: ${response.message}`);
+        return;
+      }
+
+      const { billingKey } = response;
+
+      // Call backend to process initial payment and save billing key
+      // Using absolute URL for backend API since landing and app might be on different subdomains or paths
+      const backendUrl = 'https://ai-socratestalk.netlify.app/.netlify/functions/subscribe';
+      const subscribeResponse = await fetch(backendUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          billingKey: billingKey,
+        }),
+      });
+
+      const result = await subscribeResponse.json();
+
+      if (subscribeResponse.ok) {
+        toast.success("구독이 시작되었습니다! 곧 앱으로 이동합니다.");
+        setTimeout(() => {
+          window.location.href = 'https://ai-socratestalk.netlify.app';
+        }, 2000);
+      } else {
+        toast.error(result.message || "구독 처리 중 오류가 발생했습니다.");
+      }
+    } catch (error) {
+      console.error("Payment issuance failed:", error);
+      toast.error("결제 요청 중 예기치 못한 오류가 발생했습니다.");
+    }
   };
 
   const { user, signInWithGoogle, signOut } = useAuth();
@@ -486,7 +560,7 @@ function App() {
                 ))}
               </ul>
               <button
-                onClick={() => launchApp('/pricing?action=pay-pro')}
+                onClick={handleProPlan}
                 className="w-full py-3 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-lg shadow-blue-500/25 text-sm"
               >
                 Pro로 시작하기
@@ -498,7 +572,8 @@ function App() {
               <div className="inline-block px-3 py-1 rounded-full bg-[#f1f3f4] text-[#5f6368] text-xs font-bold mb-4">기관/기업</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-[#1f1f1f]">가격 문의</span>
+                  <span className="text-2xl font-black text-[#1f1f1f]">₩7,000</span>
+                  <span className="text-[#5f6368] text-sm font-medium">/ 1인 · 월</span>
                 </div>
                 <p className="text-[#5f6368] text-sm mt-1">조직을 위한 맞춤 솔루션</p>
               </div>
@@ -510,8 +585,10 @@ function App() {
                   </li>
                 ))}
               </ul>
-              <button className="w-full py-3 rounded-xl bg-white border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f8f9fa] transition-all text-sm">
-                가격 문의하기
+              <button
+                onClick={() => window.open('https://socratestutor.channel.io', '_blank')}
+                className="w-full py-3 rounded-xl bg-white border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f8f9fa] transition-all text-sm">
+                도입 문의하기
               </button>
             </div>
           </div>
@@ -593,6 +670,7 @@ function App() {
           </div>
         </div>
       </footer>
+      <Toaster position="top-center" />
     </div>
   );
 }
