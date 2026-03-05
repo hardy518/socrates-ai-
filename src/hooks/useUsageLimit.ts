@@ -4,11 +4,12 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 
 const DAILY_LIMIT = 2;
+const IS_DEV = import.meta.env.DEV;
 
 export function useUsageLimit() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [remainingCount, setRemainingCount] = useState(DAILY_LIMIT);
+  const [remainingCount, setRemainingCount] = useState(IS_DEV ? 999 : DAILY_LIMIT);
   const [canUse, setCanUse] = useState(true);
 
   const getTodayKey = (userId: string): string => {
@@ -17,6 +18,12 @@ export function useUsageLimit() {
   };
 
   const checkUsage = async () => {
+    if (IS_DEV) {
+      setRemainingCount(999);
+      setCanUse(true);
+      setIsLoading(false);
+      return;
+    }
     if (!user) {
       setIsLoading(false);
       return;
@@ -31,7 +38,7 @@ export function useUsageLimit() {
         const data = usageDoc.data();
         const used = data.count || 0;
         const remaining = Math.max(0, DAILY_LIMIT - used);
-        
+
         setRemainingCount(remaining);
         setCanUse(remaining > 0);
       } else {
@@ -49,6 +56,7 @@ export function useUsageLimit() {
   };
 
   const checkAndIncrementUsage = async (conversationId: string): Promise<boolean> => {
+    if (IS_DEV) return true;
     if (!user) return false;
 
     try {
@@ -58,7 +66,7 @@ export function useUsageLimit() {
 
       if (usageDoc.exists()) {
         const data = usageDoc.data();
-        
+
         // 🔥 수정: 제한 초과 시 명확히 false 반환
         if (data.count >= DAILY_LIMIT) {
           console.log('오늘 사용 횟수를 초과했습니다');

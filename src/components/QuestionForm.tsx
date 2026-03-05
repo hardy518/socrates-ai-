@@ -12,6 +12,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface QuestionFormProps {
@@ -188,21 +195,19 @@ export function QuestionForm({
   return (
     <div className="space-y-6">
       {/* Category Selection */}
-      <div className="flex flex-wrap gap-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={cn(
-              "px-4 py-2 rounded-full text-sm font-medium transition-all border",
-              category === cat
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background text-muted-foreground border-border hover:border-primary/50"
-            )}
-          >
-            {cat}
-          </button>
-        ))}
+      <div className="flex items-center gap-2">
+        <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
+          <SelectTrigger className="w-40 h-9 bg-secondary border-0 rounded-lg">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-card border border-border rounded-xl shadow-lg z-50">
+            {CATEGORIES.map((cat) => (
+              <SelectItem key={cat} value={cat} className="rounded-lg">
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

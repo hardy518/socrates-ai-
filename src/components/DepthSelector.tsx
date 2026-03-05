@@ -10,7 +10,7 @@ export function DepthSelector({
   disabled
 }: DepthSelectorProps) {
   return <div className="flex items-center gap-2">
-    <span className="text-sm text-muted-foreground whitespace-nowrap">고민 단계</span>
+    <span className="text-sm text-muted-foreground whitespace-nowrap">단계 선택</span>
     <Select value={value.toString()} onValueChange={v => onChange(parseInt(v))} disabled={disabled}>
       <SelectTrigger className="w-20 h-9 bg-secondary border-0 rounded-lg">
         <SelectValue />

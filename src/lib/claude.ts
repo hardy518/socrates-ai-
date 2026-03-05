@@ -1,8 +1,4 @@
-import { getFunctions, httpsCallable } from "firebase/functions";
-import type { ChatSession, Message, MessageFile, ChatMode } from "@/types/chat";
-import { app } from "./firebase";
-
-const functions = getFunctions(app);
+import type { ChatSession, MessageFile } from "@/types/chat";
 
 async function fileToBase64(url: string): Promise<string> {
   const response = await fetch(url);
@@ -23,8 +19,6 @@ export async function generateAIResponse(
   userMessage: string,
   newFiles?: MessageFile[]
 ): Promise<string> {
-  const generateAIResponseFn = httpsCallable(functions, 'generateAIResponse');
-
   // Prepare files with base64 data to send to the backend
   const filesWithBase64 = [];
   if (newFiles && newFiles.length > 0) {
@@ -43,48 +37,68 @@ export async function generateAIResponse(
   }
 
   try {
-    const result = await generateAIResponseFn({
-      session: {
-        category: session.category,
-        chatMode: session.chatMode,
-        depth: session.depth,
-        messages: session.messages.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }))
+    const response = await fetch('/.netlify/functions/generateAIResponse', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      userMessage,
-      files: filesWithBase64
+      body: JSON.stringify({
+        session: {
+          category: session.category,
+          chatMode: session.chatMode,
+          depth: session.depth,
+          messages: session.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        },
+        userMessage,
+        files: filesWithBase64
+      })
     });
 
-    const data = result.data as { text: string };
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Netlify Function call failed");
+    }
+
+    const data = await response.json() as { text: string };
     return data.text;
   } catch (error) {
-    console.error("Cloud Function call failed:", error);
+    console.error("Netlify Function call failed:", error);
     throw new Error("AI 응답을 생성하는 중에 오류가 발생했습니다.");
   }
 }
 
 export async function generateFinalAnswer(session: ChatSession): Promise<string> {
-  const generateFinalAnswerFn = httpsCallable(functions, 'generateFinalAnswer');
-
   try {
-    const result = await generateFinalAnswerFn({
-      session: {
-        category: session.category,
-        problem: session.problem,
-        attempts: session.attempts,
-        messages: session.messages.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }))
-      }
+    const response = await fetch('/.netlify/functions/generateFinalAnswer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        session: {
+          category: session.category,
+          problem: session.problem,
+          attempts: session.attempts,
+          messages: session.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        }
+      })
     });
 
-    const data = result.data as { text: string };
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Netlify Function call failed");
+    }
+
+    const data = await response.json() as { text: string };
     return data.text;
   } catch (error) {
-    console.error("Cloud Function call failed:", error);
+    console.error("Netlify Function call failed:", error);
     throw new Error("최종 답변을 생성하는 중에 오류가 발생했습니다.");
   }
 }

@@ -1,11 +1,7 @@
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { setGlobalOptions } = require("firebase-functions/v2");
-const Anthropic = require("@anthropic-ai/sdk");
+import { Handler } from "@netlify/functions";
+import Anthropic from "@anthropic-ai/sdk";
 
-// Set global options for v2 functions
-setGlobalOptions({ region: "us-central1" });
-
-const GET_SYSTEM_PROMPT = (category, mode = 'socrates', depth = 3) => {
+const GET_SYSTEM_PROMPT = (category: string, mode = 'socrates', depth = 3) => {
     const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
     const baseInstruction = `당신은 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다. 친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
 
@@ -54,23 +50,43 @@ const COMMON_RULES = `
 - 짧고 명료하게, 한 번에 1-2개의 질문만 합니다.
 - 판단이나 충고 없이, 성찰을 유도하는 질문을 사용합니다.`;
 
-exports.generateAIResponse = onCall({ cors: true }, async (request) => {
-    // Check if user is authenticated
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', '인증된 사용자만 접근 가능합니다.');
+export const handler: Handler = async (event) => {
+    // CORS headers
+    const headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Content-Type": "application/json"
+    };
+
+    if (event.httpMethod === "OPTIONS") {
+        return { statusCode: 204, headers, body: "" };
     }
 
-    const { session, userMessage, files } = request.data;
-    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (event.httpMethod !== "POST") {
+        return { statusCode: 405, headers, body: "Method Not Allowed" };
+    }
 
+    const apiKey = process.env.ANTHROPIC_API_KEY || process.env.VITE_ANTHROPIC_API_KEY;
     if (!apiKey) {
-        throw new HttpsError('internal', 'Anthropic API 키가 설정되지 않았습니다. .env 파일을 확인하거나 환경 변수를 설정하세요.');
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({
+                error: "Anthropic API key is not configured.",
+                debug: {
+                    hasAnthropic: !!process.env.ANTHROPIC_API_KEY,
+                    hasViteAnthropic: !!process.env.VITE_ANTHROPIC_API_KEY
+                }
+            })
+        };
     }
 
+    const { session, userMessage, files } = JSON.parse(event.body || "{}");
     const client = new Anthropic({ apiKey });
     const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.chatMode, session.depth) + COMMON_RULES;
 
-    const userContent = [{ type: "text", text: userMessage }];
+    const userContent: any[] = [{ type: "text", text: userMessage }];
 
     if (files && files.length > 0) {
         for (const file of files) {
@@ -96,92 +112,41 @@ exports.generateAIResponse = onCall({ cors: true }, async (request) => {
         }
     }
 
-    const history = session.messages.map(msg => ({
+    const history = session.messages.map((msg: any) => ({
         role: msg.role === "user" ? "user" : "assistant",
         content: msg.content
     }));
 
-    const messages = [...history, { role: "user", content: userContent }];
+    const anthropicMessages = [...history, { role: "user", content: userContent }];
 
     try {
-        const response = await client.messages.create({
+        const response: any = await client.messages.create({
             model: "claude-haiku-4-5-20251001",
-            max_tokens: 1024,
+            max_tokens: 4096,
+            messages: anthropicMessages,
             system: systemPrompt,
-            messages: messages,
         });
 
-        const textContent = response.content.find((block) => block.type === "text");
-        if (!textContent || textContent.type !== "text") {
-            throw new HttpsError('internal', 'AI가 빈 응답을 반환했습니다.');
+        const textContent = response.content.find((block: any) => block.type === "text");
+        if (!textContent) {
+            return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ error: "AI returned an empty response." })
+            };
         }
 
-        return { text: textContent.text };
-    } catch (error) {
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ text: textContent.text })
+        };
+    } catch (error: any) {
         console.error("AI Response Error:", error);
-        throw new HttpsError('internal', 'AI 응답 생성 실패: ' + error.message);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: error.message })
+        };
     }
-});
-
-exports.generateFinalAnswer = onCall({ cors: true }, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError('unauthenticated', '인증된 사용자만 접근 가능합니다.');
-    }
-
-    const { session } = request.data;
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-
-    if (!apiKey) {
-        throw new HttpsError('internal', 'Anthropic API 키가 설정되지 않았습니다.');
-    }
-
-    const client = new Anthropic({ apiKey });
-
-    const conversationSummary = session.messages
-        .map(msg => `${msg.role === 'user' ? '유저' : 'AI'}: ${msg.content}`)
-        .join('\n\n');
-
-    const finalPrompt = `다음은 사용자와의 전체 대화 내용입니다:
-
-카테고리: ${session.category}
-문제: ${session.problem}
-현재 시도/배경: ${session.attempts}
-
-=== 대화 내용 ===
-${conversationSummary}
-
-=== 요청 ===
-위 대화를 바탕으로, 사용자가 목표를 달성하기 위한 구체적이고 실행 가능한 해결 방안을 제시해주세요.
-
-중요 지침:
-- 이미지 마크다운(![])은 절대 사용하지 마세요
-- 불필요한 특수문자나 장식은 피하세요
-- 코딩, 수학, 과학 등 정답이 명확한 주제는 명확한 답변을 제공하세요
-- 일반 텍스트 형식으로 깔끔하게 작성하세요
-
-포함 내용:
-1. 핵심 통찰: 대화를 통해 발견한 가장 중요한 깨달음
-2. 실행 계획: 구체적으로 무엇을, 어떤 순서로 해야 하는지
-3. 예상 효과: 이 방법이 왜 효과적인지
-4. 주의사항: 실행 시 주의할 점
-
-따뜻하고 격려하는 톤으로, 실질적인 조언을 제공하세요.`;
-
-    try {
-        const response = await client.messages.create({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 2048,
-            messages: [{ role: "user", content: finalPrompt }],
-        });
-
-        const textContent = response.content.find((block) => block.type === "text");
-        if (!textContent || textContent.type !== "text") {
-            throw new HttpsError('internal', 'AI가 빈 응답을 반환했습니다.');
-        }
-
-        return { text: textContent.text };
-    } catch (error) {
-        console.error("Final Answer Error:", error);
-        throw new HttpsError('internal', '최종 답변 생성 실패: ' + error.message);
-    }
-});
+};
