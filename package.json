@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "netlify": "netlify-cli dev"
+    "netlify": "netlify-cli dev",
+    "dev:landing": "npm run dev --prefix socrates-landing"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.1",

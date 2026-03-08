@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp, LogOut, User as UserIcon, ChevronDown } from 'lucide-react';
+import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp, LogOut, User as UserIcon, ChevronDown, Camera } from 'lucide-react';
 import * as ChannelService from "@channel.io/channel-web-sdk-loader";
 import { useAuth } from './contexts/AuthContext';
 import { toast, Toaster } from 'sonner';
@@ -95,10 +95,14 @@ function App() {
 
     try {
       const customerId = user.uid;
+      const storeId = import.meta.env.VITE_PORTONE_STORE_ID;
+      const channelKey = import.meta.env.VITE_PORTONE_CHANNEL_KEY;
+
+      console.log("PortOne Payment Request (Landing):", { storeId, channelKey });
 
       const response = await window.PortOne.requestIssueBillingKey({
-        storeId: import.meta.env.VITE_PORTONE_STORE_ID,
-        channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
+        storeId,
+        channelKey,
         issueId: crypto.randomUUID(),
         billingKeyMethod: "CARD",
         issueName: "소크라테스 AI Pro 정기구독",
@@ -404,10 +408,10 @@ function App() {
                 desc: '정답을 알려주지 않습니다. 단계별 질문이 당신의 사고를 문제에서 해결책으로 확장시킵니다. 최종 답은 당신 스스로 이끌어냅니다.'
               },
               {
-                icon: <Shield className="w-8 h-8 text-[#4285f4]" />,
+                icon: <Camera className="w-8 h-8 text-[#4285f4]" />,
                 bg: '#eff4ff',
                 border: '#d2e3fc',
-                title: '📸 Snap & Think',
+                title: '사진으로 문제풀기',
                 desc: '문제를 사진으로 찍어 올리세요. AI가 문제를 분석하고, 풀이 방법을 질문으로 안내합니다. 수학 문제부터 코딩 에러까지 모든 문제에 적용 가능합니다.'
               },
               {
@@ -511,20 +515,20 @@ function App() {
       <section id="pricing" className="py-16 px-6 bg-[#f8f9fa]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-black text-[#1f1f1f] mb-3 tracking-tight">사유의 가치를 투자하세요</h2>
-            <p className="text-[#5f6368] max-w-xl mx-auto text-base font-light">당신의 지적 여정에 가장 적합한 단계를 선택해 보세요.</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3 tracking-tight">사유의 가치를 투자하세요</h2>
+            <p className="text-slate-500 max-w-xl mx-auto text-base font-medium">당신의 지적 여정에 가장 적합한 단계를 선택해 보세요.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {/* Starter */}
             <div className="p-8 rounded-[2rem] bg-white border border-[#dadce0] flex flex-col card-hover">
-              <div className="inline-block px-3 py-1 rounded-full bg-[#f1f3f4] text-[#5f6368] text-xs font-bold mb-4">무료</div>
+              <div className="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold mb-4">무료</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-[#1f1f1f]">₩0</span>
-                  <span className="text-[#5f6368] text-sm font-medium">/월</span>
+                  <span className="text-4xl font-black text-slate-900">₩0</span>
+                  <span className="text-slate-500 text-sm font-medium">/월</span>
                 </div>
-                <p className="text-[#5f6368] text-sm mt-1">먼저 경험해보세요</p>
+                <p className="text-slate-500 text-sm mt-1">먼저 경험해보세요</p>
               </div>
               <ul className="space-y-3 my-6 flex-1">
                 {["하루 5회 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
@@ -546,10 +550,10 @@ function App() {
               <div className="inline-block px-3 py-1 rounded-full bg-[#4285f4] text-white text-xs font-bold mb-4 self-start">추천</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-[#1f1f1f]">₩7,000</span>
-                  <span className="text-[#5f6368] text-sm font-medium">/월</span>
+                  <span className="text-4xl font-black text-slate-900">₩7,000</span>
+                  <span className="text-slate-500 text-sm font-medium">/월</span>
                 </div>
-                <p className="text-[#5f6368] text-sm mt-1">더 깊이 생각하고 싶을 때</p>
+                <p className="text-slate-500 text-sm mt-1">더 깊이 생각하고 싶을 때</p>
               </div>
               <ul className="space-y-3 my-6 flex-1">
                 {["무제한 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
@@ -569,13 +573,13 @@ function App() {
 
             {/* Enterprise */}
             <div className="p-8 rounded-[2rem] bg-white border border-[#dadce0] flex flex-col card-hover">
-              <div className="inline-block px-3 py-1 rounded-full bg-[#f1f3f4] text-[#5f6368] text-xs font-bold mb-4">기관/기업</div>
+              <div className="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold mb-4">기관/기업</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-[#1f1f1f]">₩7,000</span>
-                  <span className="text-[#5f6368] text-sm font-medium">/ 1인 · 월</span>
+                  <span className="text-2xl font-black text-slate-900">₩7,000</span>
+                  <span className="text-slate-500 text-sm font-medium">/ 1인 · 월</span>
                 </div>
-                <p className="text-[#5f6368] text-sm mt-1">조직을 위한 맞춤 솔루션</p>
+                <p className="text-slate-500 text-sm mt-1">조직을 위한 맞춤 솔루션</p>
               </div>
               <ul className="space-y-3 my-6 flex-1">
                 {["Pro보다 더 많은 사용량", "Pro의 모든 기능", "관리자 대시보드", "조직 멤버 관리", "데이터 내보내기", "전담 지원"].map((item, i) => (

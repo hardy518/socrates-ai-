@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+/* Pretendard is loaded via CDN in index.html */
 @import "tailwindcss";
 
 @theme {
@@ -8,7 +8,7 @@
   --color-brand-text: #1f1f1f;
   --color-footer-bg: #f1f3f4;
 
-  --font-sans: "Outfit", sans-serif;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 
   --animate-shine: shine 3s linear infinite;
   --animate-glow: glow 3s ease-in-out infinite;
@@ -40,7 +40,11 @@
 
 @layer base {
   body {
-    @apply antialiased bg-white text-[#1f1f1f];
+    @apply antialiased bg-white text-slate-900;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 1.6;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 

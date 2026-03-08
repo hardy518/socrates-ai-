@@ -92,10 +92,14 @@ const Pricing = () => {
 
         try {
             const customerId = user.uid;
+            const storeId = import.meta.env.VITE_PORTONE_STORE_ID;
+            const channelKey = import.meta.env.VITE_PORTONE_CHANNEL_KEY;
+
+            console.log("PortOne Payment Request:", { storeId, channelKey });
 
             const response = await window.PortOne.requestIssueBillingKey({
-                storeId: import.meta.env.VITE_PORTONE_STORE_ID,
-                channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
+                storeId,
+                channelKey,
                 issueId: crypto.randomUUID(),
                 billingKeyMethod: "CARD",
                 issueName: "소크라테스 AI Pro 정기구독",
