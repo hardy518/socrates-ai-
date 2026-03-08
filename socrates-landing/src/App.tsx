@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Target, Menu, X, CheckCircle2, Send, Shield, TrendingUp, LogOut, User as UserIcon, ChevronDown, Camera } from 'lucide-react';
+import { ArrowRight, Target, Menu, X, CheckCircle2, Send, TrendingUp, LogOut, User as UserIcon, ChevronDown, Camera } from 'lucide-react';
 import * as ChannelService from "@channel.io/channel-web-sdk-loader";
 import { useAuth } from './contexts/AuthContext';
 import { toast, Toaster } from 'sonner';
