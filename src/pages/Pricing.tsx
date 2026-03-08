@@ -105,7 +105,7 @@ const Pricing = () => {
                 issueName: "소크라테스 AI Pro 정기구독",
                 customer: {
                     customerId: customerId,
-                    fullName: user.displayName || "User",
+                    fullName: user?.displayName || "User",
                     email: user.email || undefined,
                     phoneNumber: import.meta.env.VITE_TEST_PHONE_NUMBER || "01000000000",
                 },

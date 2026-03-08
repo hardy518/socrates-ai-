@@ -242,10 +242,10 @@ export function Sidebar({
                   >
                     <div className="flex items-center gap-2 w-full">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
-                        {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+                        {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
                       </div>
                       <span className="text-sm font-medium truncate flex-1 text-left">
-                        {user.displayName?.split(' ')[0] || user.email?.split('@')[0] || "사용자"}
+                        {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "사용자"}
                       </span>
                     </div>
                   </Button>
@@ -253,14 +253,14 @@ export function Sidebar({
                 <DropdownMenuContent side="top" align="start" className="w-64 mb-2">
                   <div className="flex items-center gap-3 px-2 py-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
-                      {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+                      {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">
-                        {user.displayName || "사용자"}
+                        {user?.displayName || "사용자"}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
-                        {user.email}
+                        {user?.email}
                       </div>
                     </div>
                   </div>
@@ -303,7 +303,7 @@ export function Sidebar({
       {isCollapsed && (
         <div className="p-2 border-t border-border/50 flex-shrink-0 flex flex-col items-center gap-4 py-4 mt-auto">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mx-auto">
-            {(user.displayName?.[0] || user.email?.[0] || "U").toUpperCase()}
+            {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
           </div>
         </div>
       )}

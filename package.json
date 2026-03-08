@@ -16,6 +16,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.1",
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
     "@channel.io/channel-web-sdk-loader": "^2.0.2",
     "@hookform/resolvers": "^3.10.0",
     "@netlify/functions": "^5.1.2",
