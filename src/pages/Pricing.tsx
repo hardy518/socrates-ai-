@@ -93,12 +93,20 @@ const Pricing = () => {
         try {
             const customerId = user.uid;
 
+            // 모바일 기기 여부 확인
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const redirectUrl = `${window.location.origin}/#/payment-success`;
+
             const response = await window.PortOne.requestIssueBillingKey({
                 storeId: import.meta.env.VITE_PORTONE_STORE_ID,
                 channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
                 issueId: crypto.randomUUID(),
                 billingKeyMethod: "CARD",
                 issueName: "소크라테스 AI Pro 정기구독",
+                offerPeriod: {
+                    interval: "1m",
+                },
+                redirectUrl: isMobile ? redirectUrl : undefined,
                 customer: {
                     id: customerId,
                     fullName: user?.displayName || "User",
@@ -106,6 +114,9 @@ const Pricing = () => {
                     phoneNumber: import.meta.env.VITE_TEST_PHONE_NUMBER || "01000000000",
                 },
             });
+
+            // 리다이렉트 방식인 경우(모바일) response가 undefined일 수 있음
+            if (isMobile) return;
 
             if (response.code !== undefined) {
                 // Error occurred

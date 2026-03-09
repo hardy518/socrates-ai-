@@ -16,9 +16,46 @@ const PaymentSuccess = () => {
     const orderId = searchParams.get("orderId");
     const paymentKey = searchParams.get("paymentKey");
     const amount = searchParams.get("amount");
+    const billingKey = searchParams.get("billingKey"); // 리다이렉트 시 전달되는 빌링키
 
     useEffect(() => {
-        if (!user || !orderId) return;
+        if (!user) return;
+
+        // 1. 리다이렉트로 넘어온 빌링키 처리 (모바일 결제용)
+        if (billingKey && !orderId) {
+            const handleMobileSubscription = async () => {
+                try {
+                    const subscribeResponse = await fetch('/.netlify/functions/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: user.uid,
+                            billingKey: billingKey,
+                        }),
+                    });
+
+                    const result = await subscribeResponse.json();
+                    if (subscribeResponse.ok) {
+                        toast.success("구독이 시작되었습니다!");
+                        // Firestore 업데이트를 기다리거나 직접 상태 변경
+                        setLoading(false);
+                        setTimeout(() => navigate("/"), 2000);
+                    } else {
+                        toast.error(result.message || "구독 처리 중 오류가 발생했습니다.");
+                        navigate("/payment-fail?message=" + encodeURIComponent(result.message || "구독 처리 실패"));
+                    }
+                } catch (error) {
+                    console.error("Mobile redirect subscription failed:", error);
+                    toast.error("결제 처리 중 예기치 못한 오류가 발생했습니다.");
+                    navigate("/payment-fail");
+                }
+            };
+            handleMobileSubscription();
+            return;
+        }
+
+        // 2. 기존 방식 (웹훅 완료 대기)
+        if (!orderId) return;
 
         // 웹훅이 Firestore를 업데이트할 때까지 감시합니다.
         const unsubscribe = onSnapshot(
