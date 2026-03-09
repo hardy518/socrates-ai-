@@ -375,7 +375,7 @@ function App() {
               />
               <button
                 onClick={() => launchApp(heroPrompt)}
-                className="p-3 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-lg ml-2 group/btn flex-shrink-0"
+                className="p-3 rounded-full bg-[#1f1f1f] text-white hover:bg-black transition-all shadow-lg ml-2 group/btn flex-shrink-0 cursor-pointer"
               >
                 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
               </button>
@@ -392,7 +392,7 @@ function App() {
               <button
                 key={chip.label}
                 onClick={() => { setHeroPrompt(chip.label + ' '); launchApp(chip.label + ' '); }}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white border border-[#dadce0] text-[#5f6368] text-sm font-medium hover:border-[#4285f4]/50 hover:text-[#4285f4] transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white border border-[#dadce0] text-[#5f6368] text-sm font-medium hover:border-[#4285f4]/50 hover:text-[#4285f4] transition-all shadow-sm cursor-pointer"
               >
                 <span className="text-xs">{chip.emoji}</span>
                 {chip.label}
@@ -460,8 +460,8 @@ function App() {
                 key={cat.id}
                 onClick={() => setActiveCategory(i)}
                 className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${activeCategory === i
-                  ? 'bg-[#4285f4] text-white border-[#4285f4] shadow-lg shadow-blue-500/20'
-                  : 'bg-white text-[#5f6368] border-[#dadce0] hover:border-[#4285f4]/50'
+                  ? 'bg-[#4285f4] text-white border-[#4285f4] shadow-lg shadow-blue-500/20 cursor-pointer'
+                  : 'bg-white text-[#5f6368] border-[#dadce0] hover:border-[#4285f4]/50 cursor-pointer'
                   }`}
               >
                 {cat.label}
@@ -557,7 +557,7 @@ function App() {
             </div>
 
             {/* Pro */}
-            <div className="p-8 rounded-[2rem] bg-white border-2 border-[#4285f4] flex flex-col relative shadow-[0_24px_48px_-8px_rgba(66,133,244,0.18)] z-10">
+            <div className="p-8 rounded-[2rem] bg-white border-2 border-[#4285f4] flex flex-col relative shadow-[0_24px_48px_-8px_rgba(66,133,244,0.18)] z-10 cursor-pointer hover:translate-y-[-4px] transition-transform">
               <div className="inline-block px-3 py-1 rounded-full bg-[#4285f4] text-white text-xs font-bold mb-4 self-start">추천</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
@@ -576,7 +576,7 @@ function App() {
               </ul>
               <button
                 onClick={handleProPlan}
-                className="w-full py-3 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-lg shadow-blue-500/25 text-sm"
+                className="w-full py-3 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-lg shadow-blue-500/25 text-sm cursor-pointer"
               >
                 Pro로 시작하기
               </button>
@@ -602,7 +602,7 @@ function App() {
               </ul>
               <button
                 onClick={() => window.open('https://socratestutor.channel.io', '_blank')}
-                className="w-full py-3 rounded-xl bg-white border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f8f9fa] transition-all text-sm">
+                className="w-full py-3 rounded-xl bg-white border border-[#dadce0] text-[#1f1f1f] font-bold hover:bg-[#f8f9fa] transition-all text-sm cursor-pointer">
                 도입 문의하기
               </button>
             </div>
@@ -627,7 +627,7 @@ function App() {
               />
               <button
                 onClick={() => launchApp(ctaPrompt)}
-                className="px-4 py-2.5 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-md flex items-center gap-2 whitespace-nowrap text-sm"
+                className="px-4 py-2.5 rounded-xl bg-[#4285f4] text-white font-bold hover:bg-[#2b7de9] transition-all shadow-md flex items-center gap-2 whitespace-nowrap text-sm cursor-pointer"
               >
                 질문 시작
                 <Send className="w-3.5 h-3.5" />
