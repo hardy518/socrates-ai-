@@ -35,15 +35,30 @@ export const handler: Handler = async (event) => {
 
     try {
         const payload = JSON.parse(event.body || "{}");
+        console.log("Webhook Payload Received:", JSON.stringify(payload, null, 2));
+
         const { type, data } = payload;
 
-        // PortOne V2 uses type: "Transaction.Paid", "Transaction.Failed", etc.
-        // Also supports Cancellation hooks.
+        // PortOne V2 extraction logic
+        // Skip processing for test webhooks and BillingKey.Ready
+        if (type === "Webhook.Test" || type === "BillingKey.Ready") {
+            console.log(`${type} received. Responding with 200.`);
+            return { statusCode: 200, body: "OK" };
+        }
 
-        const customerId = data?.customer?.id; // This should be our Firebase UID
+        // customerId can be in data.customer.id or data.payment.customer.id
+        const customerId = data?.customer?.id || data?.payment?.customer?.id;
+        
         if (!customerId) {
-            console.error("No customer ID in payload");
-            return { statusCode: 400, body: "Bad Request: No customer ID" };
+            console.error(`No customer ID found for event ${type}. Paths checked: data.customer.id, data.payment.customer.id`);
+            return { 
+                statusCode: 400, 
+                body: JSON.stringify({ 
+                    error: "Bad Request: No customer ID", 
+                    receivedType: type,
+                    hint: "Ensure customer.id is passed in the payment request or billing key issue request"
+                }) 
+            };
         }
 
         const userRef = db.collection("users").doc(customerId);

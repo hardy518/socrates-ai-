@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@channel.io/channel-web-sdk-loader": "^2.0.2",
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@netlify/functions": "^2.8.2",
     "@tailwindcss/postcss": "^4.2.0",
     "firebase": "^12.9.0",
+    "firebase-admin": "^13.0.1",
     "lucide-react": "^0.575.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

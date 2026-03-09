@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { setProPlan } from "@/utils/subscription";
+import { db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2 } from "lucide-react";
@@ -17,28 +18,42 @@ const PaymentSuccess = () => {
     const amount = searchParams.get("amount");
 
     useEffect(() => {
-        const finalizePayment = async () => {
-            if (user && orderId && paymentKey) {
-                try {
-                    // 실제 서비스라면 여기서 백엔드에서 결제 승인(confirm) API를 호출해야 하지만,
-                    // 유저의 요청대로 바로 Firebase에 플랜을 저장합니다.
-                    await setProPlan(user.uid, {
-                        paymentKey,
-                        orderId
-                    });
-                    toast.success("Pro 구독이 시작되었어요!");
-                } catch (error) {
-                    console.error("Error updating subscription:", error);
-                    toast.error("구독 정보 갱신 중 오류가 발생했습니다.");
-                }
-            }
-            setLoading(false);
-        };
+        if (!user || !orderId) return;
 
-        if (user) {
-            finalizePayment();
-        }
-    }, [user, orderId, paymentKey]);
+        // 웹훅이 Firestore를 업데이트할 때까지 감시합니다.
+        const unsubscribe = onSnapshot(
+            doc(db, "users", user.uid, "subscription", "current"),
+            (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.status === 'active' && data.plan === 'pro') {
+                        toast.success("구독 결제가 확인되었습니다!");
+                        setLoading(false);
+                        // 약간의 지연 후 홈으로 이동하여 성공 메시지를 볼 수 있게 함
+                        setTimeout(() => navigate("/"), 2000);
+                    }
+                }
+            },
+            (error) => {
+                console.error("Error listening to subscription:", error);
+                toast.error("결제 상태를 확인하는 중 오류가 발생했습니다.");
+            }
+        );
+
+        // 일정 시간(예: 30초) 동안 업데이트가 없으면 수동 확인 안내
+        const timeoutId = setTimeout(() => {
+            if (loading) {
+                setLoading(false);
+                toast.error("결제 확인 시간이 초과되었습니다. 잠시 후 홈에서 확인해 주세요.");
+                setTimeout(() => navigate("/"), 3000);
+            }
+        }, 30000);
+
+        return () => {
+            unsubscribe();
+            clearTimeout(timeoutId);
+        };
+    }, [user, orderId, navigate]);
 
     if (loading) {
         return (

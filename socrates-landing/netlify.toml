@@ -3,7 +3,19 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [build.environment]
-  # These variables must also be set in the Netlify UI to be secure and effective
   NODE_VERSION = "20"
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
