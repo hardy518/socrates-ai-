@@ -3,7 +3,7 @@ import { SupportedLanguage } from '@/utils/detectLanguage';
 export const translations = {
     ko: {
         mainTitle: "Think deeper.",
-        dailyLimitReached: "오늘의 무료 사용 횟수(2회)를 모두 사용했습니다. 내일 다시 이용해주세요!",
+        dailyLimitReached: "오늘의 무료 사용 횟수(5회)를 모두 사용했습니다. 내일 다시 이용해주세요!",
         usageLimitReached: "사용 횟수 제한에 도달했습니다.",
         sessionCreateFailed: "세션 생성에 실패했습니다.",
         newSession: "새 대화",
@@ -25,7 +25,8 @@ export const translations = {
     },
     en: {
         mainTitle: "Think deeper.",
-        dailyLimitReached: "You've used all your free sessions (2) for today. Please try again tomorrow!",
+        dailyLimitReached: "You've used all your free sessions (5) for today. Please try again tomorrow!",
+
         usageLimitReached: "Usage limit reached.",
         sessionCreateFailed: "Failed to create session.",
         newSession: "New Chat",
