@@ -47,7 +47,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+
+      // 🔥 신규 가입 알림 (슬랙)
+      const { user: firebaseUser, _tokenResponse } = result as any;
+      if (_tokenResponse?.isNewUser) {
+        try {
+          const slackUrl = import.meta.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
+          if (slackUrl) {
+            const now = new Date().toLocaleString('ko-KR', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            });
+            await fetch(slackUrl, {
+              method: "POST",
+              body: JSON.stringify({
+                text: `🎉 신규 가입: [${firebaseUser.email}] | Google | ${now}`
+              }),
+            });
+          }
+        } catch (slackError) {
+          console.error("슬랙 알림 보내기 실패:", slackError);
+        }
+      }
     } catch (error) {
       console.error("로그인 실패:", error);
       throw error;

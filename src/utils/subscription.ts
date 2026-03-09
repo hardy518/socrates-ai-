@@ -60,9 +60,9 @@ export const setProPlan = async (userId: string, paymentData: {
 
         await setDoc(doc(db, "users", userId, "subscription", "current"), subData);
 
-        // Usage limit 업데이트 (Pro는 사실상 무제한이지만 숫자로 관리한다면 999)
+        // Usage limit 업데이트 (Pro는 매월 200회)
         await setDoc(doc(db, "users", userId, "usage", "current"), {
-            limit: 999
+            limit: 200
         }, { merge: true });
 
     } catch (error) {
@@ -86,9 +86,9 @@ export const deleteSubscription = async (userId: string) => {
     try {
         await deleteDoc(doc(db, "users", userId, "subscription", "current"));
 
-        // Usage limit 원복 (무료 2)
+        // Usage limit 원복 (무료 5)
         await setDoc(doc(db, "users", userId, "usage", "current"), {
-            limit: 2
+            limit: 5
         }, { merge: true });
 
     } catch (error) {
