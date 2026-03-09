@@ -39,24 +39,24 @@ export const handler: Handler = async (event) => {
 
         const { type, data } = payload;
 
-        // Skip processing for test webhooks
-        if (type === "Webhook.Test") {
-            console.log("Test webhook received. Responding with 200.");
-            return { statusCode: 200, body: "Test OK" };
+        // PortOne V2 extraction logic
+        // Skip processing for test webhooks and BillingKey.Ready
+        if (type === "Webhook.Test" || type === "BillingKey.Ready") {
+            console.log(`${type} received. Responding with 200.`);
+            return { statusCode: 200, body: "OK" };
         }
 
-        // PortOne V2 extraction logic
         // customerId can be in data.customer.id or data.payment.customer.id
         const customerId = data?.customer?.id || data?.payment?.customer?.id;
         
         if (!customerId) {
-            console.error("No customer ID found in payload. Paths checked: data.customer.id, data.payment.customer.id");
+            console.error(`No customer ID found for event ${type}. Paths checked: data.customer.id, data.payment.customer.id`);
             return { 
                 statusCode: 400, 
                 body: JSON.stringify({ 
                     error: "Bad Request: No customer ID", 
                     receivedType: type,
-                    hint: "Ensure customer.id is passed in the payment request"
+                    hint: "Ensure customer.id is passed in the payment request or billing key issue request"
                 }) 
             };
         }
