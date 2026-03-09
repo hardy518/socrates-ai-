@@ -98,7 +98,11 @@ function App() {
       const storeId = import.meta.env.VITE_PORTONE_STORE_ID;
       const channelKey = import.meta.env.VITE_PORTONE_CHANNEL_KEY;
 
-      console.log("PortOne Payment Request (Landing):", { storeId, channelKey });
+      // 모바일 기기 여부 확인
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const redirectUrl = `${window.location.origin}/payment-success`;
+
+      console.log("PortOne Payment Request (Landing):", { storeId, channelKey, isMobile });
 
       const response = await window.PortOne.requestIssueBillingKey({
         storeId,
@@ -106,13 +110,20 @@ function App() {
         issueId: crypto.randomUUID(),
         billingKeyMethod: "CARD",
         issueName: "소크라테스 AI Pro 정기구독",
+        offerPeriod: {
+          interval: "1m",
+        },
+        redirectUrl: isMobile ? redirectUrl : undefined,
         customer: {
-          customerId: customerId,
+          id: customerId,
           fullName: user.displayName || "User",
           email: user.email || undefined,
           phoneNumber: import.meta.env.VITE_TEST_PHONE_NUMBER || "01000000000",
         },
       });
+
+      // 리다이렉트 방식인 경우(모바일) response가 undefined일 수 있음
+      if (isMobile) return;
 
       if (response.code !== undefined) {
         toast.error(`결제 준비 중 오류가 발생했습니다: ${response.message}`);
