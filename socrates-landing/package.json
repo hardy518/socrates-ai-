@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@channel.io/channel-web-sdk-loader": "^2.0.2",
     "@netlify/functions": "^2.8.2",
     "@tailwindcss/postcss": "^4.2.0",
     "firebase": "^12.9.0",
