@@ -127,7 +127,8 @@ const Pricing = () => {
             const { billingKey } = response;
 
             // Call backend to process initial payment and save billing key
-            const subscribeResponse = await fetch('/.netlify/functions/subscribe', {
+            const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+            const subscribeResponse = await fetch(`${API_BASE_URL}/.netlify/functions/subscribe`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -4,4 +4,5 @@
     <string name="title_activity_main">SocratesAI</string>
     <string name="package_name">com.socrates.ai</string>
     <string name="custom_url_scheme">com.socrates.ai</string>
+    <string name="server_client_id">230731687645-6v0uh2dpfdqb7khjtrg6urmh25k1fl6d.apps.googleusercontent.com</string>
 </resources>

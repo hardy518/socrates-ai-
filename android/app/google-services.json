@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "230731687645",
+    "project_id": "socrates-ai-976fb",
+    "storage_bucket": "socrates-ai-976fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230731687645:android:cb4ea9de3265a8fb479d34",
+        "android_client_info": {
+          "package_name": "com.socrates.ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "230731687645-ienkg9328tcu0h5de0phvm7nsui5s0ui.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.socrates.ai",
+            "certificate_hash": "5e906e093687b1d4964215bbf50c90a3571852a6"
+          }
+        },
+        {
+          "client_id": "230731687645-jltuslb50haai3fpk36tnc01g0ss9nm6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.socrates.ai",
+            "certificate_hash": "5e906e71b07de22caf29171171787bc80c43d7b0"
+          }
+        },
+        {
+          "client_id": "230731687645-6v0uh2dpfdqb7khjtrg6urmh25k1fl6d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKHaqVp-ykBcxJDN_f45Eirh8veaHMu8Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "230731687645-6v0uh2dpfdqb7khjtrg6urmh25k1fl6d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

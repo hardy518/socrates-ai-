@@ -82,20 +82,9 @@ export function MobileSidebar({
         side="left"
         className="h-full w-[300px] p-0 flex flex-col bg-background border-r border-border shadow-xl [&>button]:hidden"
       >
-        {/* Header - Fixed at top */}
-        <div className="p-3 flex items-center justify-between border-b border-border/50">
-          <div className="flex items-center gap-2 ml-2">
-            <span className="font-semibold text-foreground">Socrates</span>
-          </div>
-          <SheetClose asChild>
-            <Button variant="ghost" size="icon" className="rounded-lg md:hidden">
-              <Menu className="w-5 h-5" />
-            </Button>
-          </SheetClose>
-        </div>
 
         {/* Search & New Chat - Fixed at top below header */}
-        <div className="px-3 py-4 space-y-4 flex-shrink-0">
+        <div className="px-3 py-4 pt-[env(safe-area-inset-top,20px)] space-y-4 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input

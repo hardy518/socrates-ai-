@@ -25,7 +25,8 @@ const PaymentSuccess = () => {
         if (billingKey && !orderId) {
             const handleMobileSubscription = async () => {
                 try {
-                    const subscribeResponse = await fetch('/.netlify/functions/subscribe', {
+                    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+                    const subscribeResponse = await fetch(`${API_BASE_URL}/.netlify/functions/subscribe`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

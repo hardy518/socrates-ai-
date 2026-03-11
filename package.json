@@ -21,6 +21,7 @@
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
     "@channel.io/channel-web-sdk-loader": "^2.0.2",
+    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@hookform/resolvers": "^3.10.0",
     "@netlify/functions": "^5.1.2",
     "@radix-ui/react-accordion": "^1.2.11",

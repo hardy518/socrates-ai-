@@ -37,7 +37,8 @@ export async function generateAIResponse(
   }
 
   try {
-    const response = await fetch('/.netlify/functions/generateAIResponse', {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    const response = await fetch(`${API_BASE_URL}/.netlify/functions/generateAIResponse`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,7 +73,8 @@ export async function generateAIResponse(
 
 export async function generateFinalAnswer(session: ChatSession): Promise<string> {
   try {
-    const response = await fetch('/.netlify/functions/generateFinalAnswer', {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    const response = await fetch(`${API_BASE_URL}/.netlify/functions/generateFinalAnswer`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

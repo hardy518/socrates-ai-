@@ -195,9 +195,12 @@ export function QuestionForm({
   return (
     <div className="space-y-6">
       {/* Category Selection */}
-      <div className="flex items-center gap-2">
+      <div className="space-y-2">
+        <label className="block text-sm font-semibold text-foreground">
+          Category
+        </label>
         <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
-          <SelectTrigger className="w-40 h-9 bg-secondary border-0 rounded-lg">
+          <SelectTrigger className="w-full sm:w-40 h-9 bg-secondary border-0 rounded-lg">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-card border border-border rounded-xl shadow-lg z-50">
@@ -224,7 +227,7 @@ export function QuestionForm({
                 onChange={(e) => setProblem(e.target.value)}
                 placeholder="해결하고 싶은 고민이나 문제를 입력해 주세요"
                 rows={1}
-                style={{ minHeight: '3rem' }} // ensure at least 1 line height visual
+                style={{ minHeight: '1.5rem' }} // ensure at least 1 line height visual
               />
 
               {/* File Preview inside textarea area - Bottom area */}
@@ -319,14 +322,13 @@ export function QuestionForm({
             <label className="block text-sm font-semibold text-foreground mb-2">
               {secondLabel}
             </label>
-            <div className="relative bg-secondary/30 rounded-2xl border border-border transition-colors">
+            <div className="relative bg-secondary/30 rounded-2xl border border-border transition-colors flex items-center min-h-[2.25rem]">
               <textarea
-                className="w-full bg-transparent border-0 outline-none focus:ring-0 shadow-none p-4 text-sm resize-none"
+                className="w-full bg-transparent border-0 outline-none focus:ring-0 shadow-none px-4 py-2 text-sm resize-none"
                 value={attemptsOrContext}
                 onChange={(e) => setAttemptsOrContext(e.target.value)}
                 placeholder={secondPlaceholder}
-                rows={2}
-                style={{ minHeight: '4.5rem' }}
+                rows={1}
               />
             </div>
           </div>

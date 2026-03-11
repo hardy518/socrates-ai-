@@ -14,7 +14,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getUserSettings, setUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { t } = useLanguage();
@@ -238,32 +239,32 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
           ) : (
             <div className="flex-1 flex flex-col min-w-0 bg-background relative overflow-y-auto h-full">
               {/* Mobile Menu Trigger for Initial View */}
-              <div className="sm:hidden flex items-center p-4 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur-sm z-30 w-full transition-all">
+              <div className="sm:hidden flex items-center p-4 border-b border-border/50 sticky top-0 bg-background/95 backdrop-blur-sm z-30 w-full transition-all pt-[calc(1rem+env(safe-area-inset-top))]">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-lg hover:bg-secondary"
-                  onClick={() => setIsMobileSidebarOpen(true)}
+                  className="rounded-lg hover:bg-secondary relative"
+                  onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
                 >
-                  <Menu className="w-5 h-5 text-muted-foreground" />
+                  <div className="relative w-5 h-5 transition-all duration-300">
+                    <Menu className={cn(
+                      "w-5 h-5 text-muted-foreground absolute inset-0 transition-all duration-300",
+                      isMobileSidebarOpen ? "opacity-0 rotate-90 scale-0" : "opacity-100 rotate-0 scale-100"
+                    )} />
+                    <X className={cn(
+                      "w-5 h-5 text-muted-foreground absolute inset-0 transition-all duration-300",
+                      isMobileSidebarOpen ? "opacity-100 rotate-0 scale-100" : "opacity-0 -rotate-90 scale-0"
+                    )} />
+                  </div>
                 </Button>
                 <div className="flex items-center gap-2 ml-3">
-                  <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-sm bg-primary" />
-                  </div>
-                  <span className="font-bold text-lg tracking-tight text-foreground">Socrates</span>
+                  <span className="font-bold text-lg tracking-tight text-foreground">Socrates : Think deeper</span>
                 </div>
               </div>
 
               <div className="flex-1 flex flex-col items-center justify-center py-12 px-6">
                 <div className="max-w-4xl w-full space-y-8">
                   <div className="space-y-4 text-center sm:text-left">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text">
-                      {t('mainTitle')}
-                    </h1>
-                    <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl font-medium leading-relaxed">
-                      어떤 문제든 소크라테스처럼 함께 고민해 드릴게요.
-                    </p>
                   </div>
 
                   <QuestionForm

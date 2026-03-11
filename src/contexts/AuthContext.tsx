@@ -2,10 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
   User,
   signInWithPopup,
-  signInAnonymously, // ← 추가!
-  signOut as firebaseSignOut
+  signInAnonymously,
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInWithCredential
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import { Capacitor } from "@capacitor/core";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 
 interface AuthContextType {
   user: User | null;
@@ -22,6 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize GoogleAuth for Capacitor
+    if (Capacitor.isNativePlatform()) {
+      GoogleAuth.initialize({
+        clientId: '230731687645-6v0uh2dpfdqb7khjtrg6urmh25k1fl6d.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      });
+    }
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setLoading(false);
@@ -47,36 +60,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
+      let firebaseUser: User;
+
+      if (Capacitor.isNativePlatform()) {
+        console.log("📱 모바일 네이티브 로그인 시작...");
+        const googleUser = await GoogleAuth.signIn();
+        console.log("✅ GoogleAuth.signIn() 성공:", googleUser.email);
+
+        if (!googleUser.authentication.idToken) {
+          throw new Error("ID Token이 없습니다. Google 설정을 확인해주세요.");
+        }
+
+        const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+        console.log("🔗 Firebase Credential 생성 완료, 로그인 시도...");
+        const result = await signInWithCredential(auth, credential);
+        firebaseUser = result.user;
+        console.log("🎉 Firebase 로그인 성공:", firebaseUser.email);
+      } else {
+        const result = await signInWithPopup(auth, googleProvider);
+        firebaseUser = result.user;
+      }
 
       // 🔥 신규 가입 알림 (슬랙)
-      const { user: firebaseUser, _tokenResponse } = result as any;
-      if (_tokenResponse?.isNewUser) {
+      const slackUrl = import.meta.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
+      if (slackUrl && (firebaseUser as any)._tokenResponse?.isNewUser) {
         try {
-          const slackUrl = import.meta.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
-          if (slackUrl) {
-            const now = new Date().toLocaleString('ko-KR', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-              hour12: false
-            });
-            await fetch(slackUrl, {
-              method: "POST",
-              body: JSON.stringify({
-                text: `🎉 신규 가입: [${firebaseUser.email}] | Google | ${now}`
-              }),
-            });
-          }
+          const now = new Date().toLocaleString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          });
+          await fetch(slackUrl, {
+            method: "POST",
+            body: JSON.stringify({
+              text: `🎉 신규 가입: [${firebaseUser.email}] | Google | ${now}`
+            }),
+          });
         } catch (slackError) {
           console.error("슬랙 알림 보내기 실패:", slackError);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("로그인 실패:", error);
+      if (Capacitor.isNativePlatform()) {
+        alert("로그인 에러 상세: " + JSON.stringify(error));
+      }
       throw error;
     }
   };
