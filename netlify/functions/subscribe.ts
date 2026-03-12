@@ -38,8 +38,15 @@ export const handler: Handler = async (event) => {
     const apiSecret = process.env.PORTONE_V2_API_SECRET;
 
     if (!apiSecret) {
-        return { statusCode: 500, body: JSON.stringify({ message: "PortOne API Secret is not configured" }) };
+        console.error("PORTONE_V2_API_SECRET is missing!");
+        return { 
+            statusCode: 500, 
+            headers, 
+            body: JSON.stringify({ message: "PortOne API Secret is not configured" }) 
+        };
     }
+
+    console.log(`Processing subscription for user: ${userId}, billingKey: ${billingKey}`);
 
     try {
         // 1. Process initial payment (₩7,000)
