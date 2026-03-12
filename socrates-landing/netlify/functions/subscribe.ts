@@ -14,38 +14,87 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 export const handler: Handler = async (event) => {
-    if (event.httpMethod !== "POST") {
-        return { statusCode: 405, body: "Method Not Allowed" };
+    // Handle Preflight OPTIONS request
+    if (event.httpMethod === "OPTIONS") {
+        return {
+            statusCode: 200,
+            headers,
+            body: "",
+        };
     }
 
-    const { userId, billingKey } = JSON.parse(event.body || "{}");
+    if (event.httpMethod !== "POST") {
+        return { statusCode: 405, headers, body: "Method Not Allowed" };
+    }
+
+    // Version Marker: 2026-03-12-V2
+    // Version Marker: 2026-03-12-V3-LANDING
+    console.log("DEBUG: LANDING subscribe.ts - Body:", event.body);
+    
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { userId, billingKey, userName, userEmail, userPhone } = body;
     const apiSecret = process.env.PORTONE_V2_API_SECRET;
+    const channelKey = process.env.VITE_PORTONE_CHANNEL_KEY;
 
     if (!apiSecret) {
-        return { statusCode: 500, body: JSON.stringify({ message: "PortOne API Secret is not configured" }) };
+        console.error("PORTONE_V2_API_SECRET is missing!");
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ message: "PortOne API Secret is not configured" })
+        };
     }
+
+    console.log(`Processing subscription for user: ${userId}, billingKey: ${billingKey}`);
 
     try {
         // 1. Process initial payment (₩7,000)
         const paymentId = `initial_${userId}_${Date.now()}`;
-        const payResponse = await fetch(`https://api.portone.io/billing-keys/${billingKey}/pay`, {
+        const payResponse = await fetch(`https://api.portone.io/payments/${paymentId}/billing-key`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `PortOne ${apiSecret}`,
             },
             body: JSON.stringify({
-                paymentId,
+                billingKey,
+                channelKey,
                 orderName: "소크라테스 AI Pro 정기구독 (첫 결제)",
-                amount: { total: 7000, currency: "KRW" },
+                currency: "KRW",
+                amount: { total: 7000 },
+                customer: {
+                    id: userId,
+                    name: {
+                        full: userName || "사용자",
+                    },
+                    email: userEmail || `${userId}@socrates.ai`,
+                    phoneNumber: "010-0000-0000",
+                },
+                customData: userId,
             }),
         });
 
-        const payResult = await payResponse.json();
+        const payText = await payResponse.text();
+        let payResult = {};
+        try {
+            payResult = (payText && payText.trim()) ? JSON.parse(payText) : {};
+        } catch (e) {
+            console.error("Failed to parse pay response JSON (Landing):", payText);
+        }
         if (!payResponse.ok) {
-            console.error("Initial payment failed:", payResult);
-            return { statusCode: 400, body: JSON.stringify({ message: "첫 결제 실패", detail: payResult }) };
+            console.error("Initial payment failed (Landing):", payResult);
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ message: "첫 결제 실패", detail: payResult })
+            };
         }
 
         // 2. Save billing key and subscription info to Firestore
@@ -66,34 +115,49 @@ export const handler: Handler = async (event) => {
 
         // 3. Schedule next payment
         const scheduleId = `schedule_${userId}_${nextMonth.getTime()}`;
-        const scheduleResponse = await fetch("https://api.portone.io/payments-schedule", {
+        const scheduleResponse = await fetch(`https://api.portone.io/payments/${encodeURIComponent(scheduleId)}/schedule`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `PortOne ${apiSecret}`,
             },
             body: JSON.stringify({
-                schedules: [{
-                    paymentId: scheduleId,
+                payment: {
                     billingKey: billingKey,
                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
-                    amount: { total: 7000, currency: "KRW" },
-                    timeToPay: nextMonth.toISOString(),
-                }],
+                    currency: "KRW",
+                    amount: { total: 7000 },
+                    customer: { id: userId },
+                    customData: userId,
+                },
+                timeToPay: nextMonth.toISOString(),
             }),
         });
 
-        const scheduleResult = await scheduleResponse.json();
+        const scheduleText = await scheduleResponse.text();
+        console.log("Schedule status:", scheduleResponse.status);
+        console.log("Schedule response:", scheduleText);
+        let scheduleResult = {};
+        try {
+            scheduleResult = (scheduleText && scheduleText.trim()) ? JSON.parse(scheduleText) : {};
+        } catch (e) {
+            console.error("Failed to parse schedule response JSON (Landing):", scheduleText);
+        }
         if (!scheduleResponse.ok) {
             console.error("Scheduling failed:", scheduleResult);
         }
 
         return {
             statusCode: 200,
+            headers,
             body: JSON.stringify({ message: "Subscription started", paymentId, scheduleId }),
         };
     } catch (error: any) {
-        console.error("Subscribe function error:", error);
-        return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
+        console.error("Subscribe function error (Landing):", error);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ message: error.message })
+        };
     }
 };

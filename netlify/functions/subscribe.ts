@@ -34,15 +34,19 @@ export const handler: Handler = async (event) => {
         return { statusCode: 405, headers, body: "Method Not Allowed" };
     }
 
-    const { userId, billingKey } = JSON.parse(event.body || "{}");
+    // Version Marker: 2026-03-12-V3-ROOT
+    console.log("DEBUG: ROOT subscribe.ts - Body:", event.body);
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { userId, billingKey, userName, userEmail, userPhone } = body;
     const apiSecret = process.env.PORTONE_V2_API_SECRET;
+    const channelKey = process.env.VITE_PORTONE_CHANNEL_KEY;
 
     if (!apiSecret) {
         console.error("PORTONE_V2_API_SECRET is missing!");
-        return { 
-            statusCode: 500, 
-            headers, 
-            body: JSON.stringify({ message: "PortOne API Secret is not configured" }) 
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ message: "PortOne API Secret is not configured" })
         };
     }
 
@@ -51,30 +55,45 @@ export const handler: Handler = async (event) => {
     try {
         // 1. Process initial payment (₩7,000)
         const paymentId = `initial_${userId}_${Date.now()}`;
-        const payResponse = await fetch(`https://api.portone.io/billing-keys/${billingKey}/pay`, {
+        const payResponse = await fetch(`https://api.portone.io/payments/${paymentId}/billing-key`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `PortOne ${apiSecret}`,
             },
             body: JSON.stringify({
-                paymentId,
+                billingKey,
+                channelKey,
                 orderName: "소크라테스 AI Pro 정기구독 (첫 결제)",
-                amount: { total: 7000, currency: "KRW" },
+                currency: "KRW",
+                amount: { total: 7000 },
+                customer: {
+                    id: userId,
+                    name: {
+                        full: userName || "사용자",
+                    },
+                    email: userEmail || `${userId}@socrates.ai`,
+                    phoneNumber: "010-0000-0000",
+                },
                 customData: userId,
             }),
         });
 
         const payText = await payResponse.text();
-        const payResult = payText ? JSON.parse(payText) : {};
+        let payResult = {};
+        try {
+            payResult = (payText && payText.trim()) ? JSON.parse(payText) : {};
+        } catch (e) {
+            console.error("Failed to parse pay response JSON:", payText);
+        }
         if (!payResponse.ok) {
             console.error("Initial payment failed:", payResult);
             console.error("Status:", payResponse.status);
             console.error("Response text:", payText);
-            return { 
-                statusCode: 400, 
-                headers, 
-                body: JSON.stringify({ message: "첫 결제 실패", detail: payResult }) 
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ message: "첫 결제 실패", detail: payResult })
             };
         }
 
@@ -96,30 +115,36 @@ export const handler: Handler = async (event) => {
 
         // 3. Schedule next payment
         const scheduleId = `schedule_${userId}_${nextMonth.getTime()}`;
-        const scheduleResponse = await fetch("https://api.portone.io/payments-schedule", {
+        const scheduleResponse = await fetch(`https://api.portone.io/payments/${encodeURIComponent(scheduleId)}/schedule`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `PortOne ${apiSecret}`,
             },
             body: JSON.stringify({
-                schedules: [{
-                    paymentId: scheduleId,
+                payment: {
                     billingKey: billingKey,
                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
-                    amount: { total: 7000, currency: "KRW" },
-                    timeToPay: nextMonth.toISOString(),
+                    currency: "KRW",
+                    amount: { total: 7000 },
+                    customer: { id: userId },
                     customData: userId,
-                }],
+                },
+                timeToPay: nextMonth.toISOString(),
             }),
         });
 
         const scheduleText = await scheduleResponse.text();
-        const scheduleResult = scheduleText ? JSON.parse(scheduleText) : {};
+        console.log("Schedule status:", scheduleResponse.status);
+        console.log("Schedule response:", scheduleText);
+        let scheduleResult = {};
+        try {
+            scheduleResult = (scheduleText && scheduleText.trim()) ? JSON.parse(scheduleText) : {};
+        } catch (e) {
+            console.error("Failed to parse schedule response JSON:", scheduleText);
+        }
         if (!scheduleResponse.ok) {
             console.error("Scheduling failed:", scheduleResult);
-            // Note: Even if scheduling fails, the initial payment was successful. 
-            // We might want to mark the subscription but warning about scheduling.
         }
 
         return {

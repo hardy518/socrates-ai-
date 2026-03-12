@@ -12,10 +12,10 @@
     "packageJson": {
       "dependencies": [
         "npm:@anthropic-ai/sdk@~0.72.1",
-        "npm:@capacitor/android@^8.2.0",
-        "npm:@capacitor/cli@^8.2.0",
-        "npm:@capacitor/core@^8.2.0",
-        "npm:@capacitor/ios@^8.2.0",
+        "npm:@capacitor/android@^6.2.1",
+        "npm:@capacitor/cli@^6.2.1",
+        "npm:@capacitor/core@^6.2.1",
+        "npm:@capacitor/ios@^6.2.1",
         "npm:@channel.io/channel-web-sdk-loader@^2.0.2",
         "npm:@codetrix-studio/capacitor-google-auth@^3.4.0-rc.4",
         "npm:@eslint/js@^9.32.0",

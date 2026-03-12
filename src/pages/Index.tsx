@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getUserSettings, setUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { UsageLimitModal } from "@/components/UsageLimitModal";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ const Index = () => {
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isUsageModalOpen, setIsUsageModalOpen] = useState(false);
 
   const {
     sessions,
@@ -81,7 +83,7 @@ const Index = () => {
 
   const handleCreateSession = async (form: QuestionFormType, depth: number, mode: ChatMode) => {
     if (!canUse) {
-      toast.error(t('dailyLimitReached'));
+      setIsUsageModalOpen(true);
       return;
     }
 
@@ -281,6 +283,11 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
           )}
         </main>
       </div>
+
+      <UsageLimitModal 
+        isOpen={isUsageModalOpen} 
+        onClose={() => setIsUsageModalOpen(false)} 
+      />
     </div>
   );
 };

@@ -32,6 +32,9 @@ const PaymentSuccess = () => {
                         body: JSON.stringify({
                             userId: user.uid,
                             billingKey: billingKey,
+                            userName: user.displayName || "소크라테스 AI 사용자",
+                            userEmail: user.email || "",
+                            userPhone: "010-0000-0000",
                         }),
                     });
 

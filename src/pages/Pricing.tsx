@@ -136,6 +136,9 @@ const Pricing = () => {
                 body: JSON.stringify({
                     userId: user.uid,
                     billingKey: billingKey,
+                    userName: user.displayName || "소크라테스 AI 사용자",
+                    userEmail: user.email || "",
+                    userPhone: "010-0000-0000",
                 }),
             });
 
@@ -234,7 +237,7 @@ const Pricing = () => {
                             <p className="text-slate-500 text-sm mt-1">더 깊이 생각하고 싶을 때</p>
                         </div>
                         <ul className="space-y-3 my-6 flex-1">
-                            {["무제한 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                            {["충분한 대화 제공", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
                                 <li key={i} className="flex items-center gap-3 text-slate-800 dark:text-slate-200 text-sm font-semibold">
                                     <span className="material-icons text-primary text-base">check_circle</span>
                                     {item}
