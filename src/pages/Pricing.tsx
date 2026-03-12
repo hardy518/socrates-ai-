@@ -95,7 +95,7 @@ const Pricing = () => {
 
             // 모바일 기기 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const redirectUrl = `${window.location.origin}/#/payment-success`;
+            const redirectUrl = `${window.location.origin}/payment-success`;
 
             const response = await window.PortOne.requestIssueBillingKey({
                 storeId: import.meta.env.VITE_PORTONE_STORE_ID,

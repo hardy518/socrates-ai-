@@ -46,11 +46,15 @@ export const handler: Handler = async (event) => {
             return { statusCode: 200, body: "OK" };
         }
 
-        // customerId can be in data.customer.id or data.payment.customer.id
-        const customerId = data?.customer?.id || data?.payment?.customer?.id;
+        // customerId can be in customData (PortOne V2) or other paths
+        const customerId =
+            data?.customData ||
+            data?.customer?.id ||
+            data?.customer?.customerId ||
+            data?.payment?.customer?.id;
         
         if (!customerId) {
-            console.error(`No customer ID found for event ${type}. Paths checked: data.customer.id, data.payment.customer.id`);
+            console.error(`No customer ID found for event ${type}. Full data:`, JSON.stringify(data));
             return { 
                 statusCode: 400, 
                 body: JSON.stringify({ 
@@ -119,6 +123,7 @@ export const handler: Handler = async (event) => {
                                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
                                     amount: { total: 7000, currency: "KRW" },
                                     timeToPay: endDate.toISOString(),
+                                    customData: customerId,
                                 }],
                             }),
                         });

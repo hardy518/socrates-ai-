@@ -39,6 +39,7 @@ export const handler: Handler = async (event) => {
                 paymentId,
                 orderName: "소크라테스 AI Pro 정기구독 (첫 결제)",
                 amount: { total: 7000, currency: "KRW" },
+                customData: userId,
             }),
         });
 
@@ -79,6 +80,7 @@ export const handler: Handler = async (event) => {
                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
                     amount: { total: 7000, currency: "KRW" },
                     timeToPay: nextMonth.toISOString(),
+                    customData: userId,
                 }],
             }),
         });
