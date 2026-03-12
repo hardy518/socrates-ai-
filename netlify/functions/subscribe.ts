@@ -65,9 +65,12 @@ export const handler: Handler = async (event) => {
             }),
         });
 
-        const payResult = await payResponse.json();
+        const payText = await payResponse.text();
+        const payResult = payText ? JSON.parse(payText) : {};
         if (!payResponse.ok) {
             console.error("Initial payment failed:", payResult);
+            console.error("Status:", payResponse.status);
+            console.error("Response text:", payText);
             return { 
                 statusCode: 400, 
                 headers, 
@@ -111,7 +114,8 @@ export const handler: Handler = async (event) => {
             }),
         });
 
-        const scheduleResult = await scheduleResponse.json();
+        const scheduleText = await scheduleResponse.text();
+        const scheduleResult = scheduleText ? JSON.parse(scheduleText) : {};
         if (!scheduleResponse.ok) {
             console.error("Scheduling failed:", scheduleResult);
             // Note: Even if scheduling fails, the initial payment was successful. 
