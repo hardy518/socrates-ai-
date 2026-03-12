@@ -14,6 +14,12 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 const sendSlackMessage = async (text: string) => {
     const slackUrl = process.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
     if (!slackUrl) return;
@@ -29,8 +35,17 @@ const sendSlackMessage = async (text: string) => {
 };
 
 export const handler: Handler = async (event) => {
+    // Handle Preflight OPTIONS request
+    if (event.httpMethod === "OPTIONS") {
+        return {
+            statusCode: 200,
+            headers,
+            body: "",
+        };
+    }
+
     if (event.httpMethod !== "POST") {
-        return { statusCode: 405, body: "Method Not Allowed" };
+        return { statusCode: 405, headers, body: "Method Not Allowed" };
     }
 
     try {
@@ -182,6 +197,6 @@ export const handler: Handler = async (event) => {
         return { statusCode: 200, body: "OK" };
     } catch (error: any) {
         console.error("Webhook processing error:", error);
-        return { statusCode: 500, body: error.message };
+        return { statusCode: 500, headers, body: error.message };
     }
 };

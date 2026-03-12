@@ -14,9 +14,24 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 export const handler: Handler = async (event) => {
+    // Handle Preflight OPTIONS request
+    if (event.httpMethod === "OPTIONS") {
+        return {
+            statusCode: 200,
+            headers,
+            body: "",
+        };
+    }
+
     if (event.httpMethod !== "POST") {
-        return { statusCode: 405, body: "Method Not Allowed" };
+        return { statusCode: 405, headers, body: "Method Not Allowed" };
     }
 
     const { userId, billingKey } = JSON.parse(event.body || "{}");
@@ -46,7 +61,11 @@ export const handler: Handler = async (event) => {
         const payResult = await payResponse.json();
         if (!payResponse.ok) {
             console.error("Initial payment failed:", payResult);
-            return { statusCode: 400, body: JSON.stringify({ message: "첫 결제 실패", detail: payResult }) };
+            return { 
+                statusCode: 400, 
+                headers, 
+                body: JSON.stringify({ message: "첫 결제 실패", detail: payResult }) 
+            };
         }
 
         // 2. Save billing key and subscription info to Firestore
@@ -94,10 +113,15 @@ export const handler: Handler = async (event) => {
 
         return {
             statusCode: 200,
+            headers,
             body: JSON.stringify({ message: "Subscription started", paymentId, scheduleId }),
         };
     } catch (error: any) {
         console.error("Subscribe function error:", error);
-        return { statusCode: 500, body: JSON.stringify({ message: error.message }) };
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ message: error.message })
+        };
     }
 };
