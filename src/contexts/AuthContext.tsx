@@ -15,8 +15,9 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
-  signInAnonymously: () => Promise<void>; // ← 추가!
+  signInAnonymously: () => Promise<void>;
   signOut: () => Promise<void>;
+  reauthenticateWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -113,6 +114,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const reauthenticateWithGoogle = async () => {
+    if (!auth.currentUser) return;
+    
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const googleUser = await GoogleAuth.signIn();
+        if (!googleUser.authentication.idToken) {
+          throw new Error("ID Token이 없습니다.");
+        }
+        const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+        const { reauthenticateWithCredential } = await import("firebase/auth");
+        await reauthenticateWithCredential(auth.currentUser, credential);
+      } else {
+        const { reauthenticateWithPopup } = await import("firebase/auth");
+        await reauthenticateWithPopup(auth.currentUser, googleProvider);
+      }
+    } catch (error) {
+      console.error("Re-authentication failed:", error);
+      throw error;
+    }
+  };
+
   // 🔥 수동 익명 로그인 함수 (필요하면)
   const signInAnonymouslyManual = async () => {
     try {
@@ -137,8 +160,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       signInWithGoogle,
-      signInAnonymously: signInAnonymouslyManual, // ← 추가!
-      signOut
+      signInAnonymously: signInAnonymouslyManual,
+      signOut,
+      reauthenticateWithGoogle
     }}>
       {children}
     </AuthContext.Provider>

@@ -95,12 +95,18 @@ export const handler: Handler = async (event) => {
                 const subDoc = await subRef.get();
                 const isFirstPayment = !subDoc.exists || !subDoc.data()?.startDate;
 
+                const cardInfo = data?.payment?.method?.card || data?.method?.card;
+                const cardLast4 = cardInfo?.number || "";
+                const cardBrand = cardInfo?.brand || "";
+
                 const updateData: any = {
                     plan: 'pro',
                     status: 'active',
                     endDate: timestamp.fromDate(endDate),
                     billingKey: data?.billingKey || admin.firestore.FieldValue.delete(),
                     nextScheduledAt: timestamp.fromDate(endDate),
+                    cardLast4,
+                    cardBrand,
                     updatedAt: timestamp.now()
                 };
 
@@ -118,9 +124,21 @@ export const handler: Handler = async (event) => {
                     updatedAt: timestamp.now()
                 }, { merge: true });
 
+                // 2-1. Add to payment history
+                const paymentId = data?.paymentId || data?.payment?.id || `recurring_${customerId}_${Date.now()}`;
+                await userRef.collection("payments").doc(paymentId).set({
+                    paymentId,
+                    amount: data?.amount?.total || 7000,
+                    status: "paid",
+                    cardLast4,
+                    cardBrand,
+                    paidAt: timestamp.fromDate(paidAt),
+                });
+
                 // 3. Schedule NEXT payment (Recurring)
                 const apiSecret = process.env.PORTONE_V2_API_SECRET;
-                const billingKey = data?.billingKey || (await subDoc.data()?.billingKey);
+                const subSnap = await subRef.get();
+                const billingKey = data?.billingKey || subSnap.data()?.billingKey;
 
                 if (billingKey && apiSecret) {
                     const nextScheduleId = `schedule_${customerId}_${endDate.getTime()}`;
@@ -166,11 +184,25 @@ export const handler: Handler = async (event) => {
                 break;
             }
 
-            case "Subscription.Cancelled": {
+            case "Subscription.Cancelled":
+            case "Transaction.Cancelled": {
+                const now = timestamp.now();
+
+                // Update sub-collection (original logic + userId request)
                 await subRef.set({
                     status: 'cancelled',
                     plan: 'free',
-                    updatedAt: timestamp.now()
+                    cancelledAt: now,
+                    updatedAt: now
+                }, { merge: true });
+
+                // Update top-level user doc as requested
+                await userRef.set({
+                    subscription: {
+                        status: 'cancelled',
+                        cancelledAt: now
+                    },
+                    updatedAt: now
                 }, { merge: true });
 
                 // Reset usage to free limits
@@ -182,11 +214,11 @@ export const handler: Handler = async (event) => {
                     limit: 5,
                     count: 0,
                     resetAt: timestamp.fromDate(tomorrow),
-                    updatedAt: timestamp.now()
+                    updatedAt: now
                 }, { merge: true });
 
-                const userEmail = data?.customer?.email || "Unknown";
-                await sendSlackMessage(`🚫 구독 취소: [${userEmail}] 구독 취소 | ${new Date().toLocaleString('ko-KR')}`);
+                // Slack alert text as requested
+                await sendSlackMessage(`구독 취소 - userId: ${customerId}`);
                 break;
             }
 

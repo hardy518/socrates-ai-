@@ -10,13 +10,17 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Pricing from "./pages/Pricing";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentFail from "./pages/PaymentFail";
+import MyInsight from "./pages/MyInsight";
+import Settings from "./pages/Settings";
+import LegalPages from "./pages/LegalPages";
 
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <LanguageProvider>
         <TooltipProvider>
@@ -26,8 +30,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/my-insight" element={<MyInsight />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/payment-fail" element={<PaymentFail />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/terms" element={<LegalPages />} />
+              <Route path="/settings/privacy" element={<LegalPages />} />
+              <Route path="/settings/refund" element={<LegalPages />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -35,7 +44,8 @@ const App = () => (
         </TooltipProvider>
       </LanguageProvider>
     </AuthProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;

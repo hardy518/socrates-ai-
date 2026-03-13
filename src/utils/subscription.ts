@@ -9,13 +9,15 @@ import {
 
 export interface Subscription {
     plan: 'pro';
-    status: 'active';
+    status: 'active' | 'cancelled';
     startDate: Timestamp;
     endDate: Timestamp;
     orderId?: string;
     stripeSubscriptionId?: string;
     billingKey?: string;
     nextScheduledAt?: Timestamp;
+    cardLast4?: string;
+    cardBrand?: string;
 }
 
 /**

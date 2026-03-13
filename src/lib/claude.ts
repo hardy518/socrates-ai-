@@ -104,3 +104,22 @@ export async function generateFinalAnswer(session: ChatSession): Promise<string>
     throw new Error("최종 답변을 생성하는 중에 오류가 발생했습니다.");
   }
 }
+
+export async function analyzeInsight(userId: string, count: number): Promise<void> {
+  try {
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    const response = await fetch(`${API_BASE_URL}/.netlify/functions/analyzeInsight`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, conversationCount: count })
+    });
+
+    if (!response.ok) {
+      throw new Error("Insight analysis failed");
+    }
+  } catch (error) {
+    console.error("Error analyzing insight:", error);
+  }
+}

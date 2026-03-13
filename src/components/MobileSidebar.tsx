@@ -1,6 +1,8 @@
-import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, Pencil, LogOut, User } from "lucide-react";
-import { useState } from "react";
+import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, Pencil, LogOut, User, LayoutDashboard, Headset } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { ChatSession } from "@/types/chat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,6 +45,18 @@ export function MobileSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [showInsightBadge, setShowInsightBadge] = useState(false);
+
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
+        if (doc.exists()) {
+          setShowInsightBadge(doc.data().insightBadge === true);
+        }
+      });
+      return () => unsub();
+    }
+  }, [user]);
 
   const filteredSessions = sessions.filter(s =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -234,6 +248,36 @@ export function MobileSidebar({
                   </div>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    navigate('/my-insight');
+                  }}
+                  className="cursor-pointer"
+                >
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  <div className="flex items-center gap-2 flex-1">
+                    <span>나의 인사이트</span>
+                    {showInsightBadge && (
+                      <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    window.open('https://socratestutor.channel.io', '_blank');
+                  }}
+                  className="cursor-pointer"
+                >
+                  <Headset className="w-4 h-4 mr-2" />
+                  <span>고객 센터</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => { navigate('/settings'); }}
+                  className="cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  <span>설정</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => navigate('/pricing')}
                   className="cursor-pointer"

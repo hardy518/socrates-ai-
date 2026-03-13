@@ -1,8 +1,10 @@
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useChatStorage } from "@/hooks/useChatStorage";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
+import { useEffect, useRef, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { QuestionForm as QuestionFormType, MessageFile, ChatMode } from "@/types/chat";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileSidebar } from "@/components/MobileSidebar";
@@ -24,6 +26,7 @@ const Index = () => {
   const [chatMode, setChatMode] = useState<ChatMode>("socrates");
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -80,6 +83,34 @@ const Index = () => {
       setIsMobileSidebarOpen(false);
     }
   }, [isMobile]);
+
+  // 🔥 인사이트 업데이트 토스트 알림
+  const lastBadgeRef = useRef(false);
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
+        if (doc.exists()) {
+          const hasBadge = doc.data().insightBadge === true;
+          if (hasBadge && !lastBadgeRef.current) {
+            toast("인사이트가 업데이트됐어요 →", {
+              duration: 3000,
+              action: {
+                label: "보기",
+                onClick: () => navigate("/my-insight")
+              },
+              style: { 
+                backgroundColor: '#8B5CF6',
+                color: 'white',
+                border: 'none'
+              }
+            });
+          }
+          lastBadgeRef.current = hasBadge;
+        }
+      });
+      return () => unsub();
+    }
+  }, [user]);
 
   const handleCreateSession = async (form: QuestionFormType, depth: number, mode: ChatMode) => {
     if (!canUse) {

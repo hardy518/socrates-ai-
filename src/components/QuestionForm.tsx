@@ -35,7 +35,8 @@ const CATEGORIES: Category[] = [
   "코딩",
   "비즈니스ㆍ기획",
   "글쓰기ㆍ외국어",
-  "데이터ㆍ분석"
+  "데이터ㆍ분석",
+  "기타"
 ];
 
 export function QuestionForm({

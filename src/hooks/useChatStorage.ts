@@ -11,6 +11,7 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
+  increment,
   Timestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -98,6 +99,23 @@ export function useChatStorage() {
 
     try {
       const docRef = await addDoc(collection(db, 'conversations'), newSession);
+
+      // 🔥 대화 횟수 증가 및 인사이트 분석 트리거
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      const currentCount = (userDoc.data()?.conversationCount || 0) + 1;
+
+      await updateDoc(userRef, {
+        conversationCount: increment(1),
+        updatedAt: serverTimestamp()
+      });
+
+      if (currentCount % 10 === 0) {
+        // 백그라운드에서 분석 호출 (UI 차단 방지)
+        import('@/lib/claude').then(({ analyzeInsight }) => {
+          analyzeInsight(user.uid, currentCount).catch(console.error);
+        });
+      }
 
       const createdSession: ChatSession = {
         id: docRef.id,

@@ -97,7 +97,11 @@ export const handler: Handler = async (event) => {
             };
         }
 
-        // 2. Save billing key and subscription info to Firestore
+        // 2. Extract card info and save billing info to Firestore
+        const cardInfo = (payResult as any)?.payment?.method?.card;
+        const cardLast4 = cardInfo?.number || "";
+        const cardBrand = cardInfo?.brand || "";
+
         const now = admin.firestore.Timestamp.now();
         const nextMonth = new Date();
         nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -111,6 +115,19 @@ export const handler: Handler = async (event) => {
             billingKey: billingKey,
             lastPaymentId: paymentId,
             nextScheduledAt: nextScheduledAt,
+            cardLast4,
+            cardBrand,
+            updatedAt: now
+        }, { merge: true });
+
+        // 2-1. Save to payment history
+        await db.collection("users").doc(userId).collection("payments").doc(paymentId).set({
+            paymentId,
+            amount: 7000,
+            status: "paid",
+            cardLast4,
+            cardBrand,
+            paidAt: now,
         });
 
         // 3. Schedule next payment

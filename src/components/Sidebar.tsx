@@ -1,7 +1,9 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-import { Plus, Trash2, MessageSquare, Menu, CheckCircle2, User, LogOut, Settings, MoreVertical, Pencil, Pin, Check, X, CreditCard, Search, Star, History, Bookmark } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Menu, CheckCircle2, User, LogOut, Settings, MoreVertical, Pencil, Pin, Check, X, CreditCard, Search, Star, History, Bookmark, LayoutDashboard, Headset } from "lucide-react";
 import { ChatSession } from "@/types/chat";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,18 @@ export function Sidebar({
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showInsightBadge, setShowInsightBadge] = useState(false);
+
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
+        if (doc.exists()) {
+          setShowInsightBadge(doc.data().insightBadge === true);
+        }
+      });
+      return () => unsub();
+    }
+  }, [user]);
 
   const filteredSessions = sessions.filter(s =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -265,13 +279,37 @@ export function Sidebar({
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
-                    <Settings className="w-4 h-4 mr-2" />
-                    <span>설정</span>
+                  <DropdownMenuItem 
+                    className="gap-3 p-3 rounded-xl cursor-pointer"
+                    onClick={() => navigate("/my-insight")}
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="font-medium">나의 인사이트</span>
+                      {showInsightBadge && (
+                        <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      window.open('https://socratestutor.channel.io', '_blank');
+                    }}
+                    className="cursor-pointer gap-3 p-3 rounded-xl"
+                  >
+                    <Headset className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">고객 센터</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => navigate('/settings')}
+                    className="cursor-pointer gap-3 p-3 rounded-xl"
+                  >
+                    <Settings className="w-4 h-4 text-muted-foreground" />
+                    <span className="font-medium">설정</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate('/pricing')}
-                    className="cursor-pointer"
+                    className="cursor-pointer gap-3 p-3 rounded-xl text-primary font-bold"
                   >
                     <Star className="w-4 h-4 mr-2 text-blue-600" />
                     <span>프로 요금제로 업그레이드</span>

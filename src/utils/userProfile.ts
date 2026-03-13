@@ -1,10 +1,14 @@
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { ChatMode } from "@/types/chat";
+import { ChatMode, Insight } from "@/types/chat";
 
 export interface UserSettings {
     chatMode: ChatMode;
     socratesLevel: number;
+    conversationCount?: number;
+    insightBadge?: boolean;
+    insight?: Insight;
+    insightNotification?: boolean;
 }
 
 export const getUserSettings = async (userId: string): Promise<UserSettings> => {
@@ -14,10 +18,11 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
             const data = userDoc.data();
             return {
                 chatMode: (data.chatMode as ChatMode) || "socrates",
-                socratesLevel: data.socratesLevel || 3
+                socratesLevel: data.socratesLevel || 3,
+                insightNotification: data.insightNotification !== undefined ? data.insightNotification : true
             };
         }
-        return { chatMode: "socrates", socratesLevel: 3 };
+        return { chatMode: "socrates", socratesLevel: 3, insightNotification: true };
     } catch (error) {
         console.error("Error getting user settings:", error);
         return { chatMode: "socrates", socratesLevel: 3 };
