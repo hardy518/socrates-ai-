@@ -76,7 +76,8 @@ export const handler: Handler = async (event) => {
                 error: "Anthropic API key is not configured.",
                 debug: {
                     hasAnthropic: !!process.env.ANTHROPIC_API_KEY,
-                    hasViteAnthropic: !!process.env.VITE_ANTHROPIC_API_KEY
+                    hasViteAnthropic: !!process.env.VITE_ANTHROPIC_API_KEY,
+                    envKeys: Object.keys(process.env).filter(key => key.includes('API') || key.includes('ANTHROPIC') || key.includes('VITE'))
                 }
             })
         };
