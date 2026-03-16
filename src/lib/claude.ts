@@ -46,7 +46,6 @@ export async function generateAIResponse(
       body: JSON.stringify({
         session: {
           category: session.category,
-          chatMode: session.chatMode,
           depth: session.depth,
           messages: session.messages.map(msg => ({
             role: msg.role,
@@ -83,7 +82,6 @@ export async function generateFinalAnswer(session: ChatSession): Promise<string>
         session: {
           category: session.category,
           problem: session.problem,
-          attempts: session.attempts,
           messages: session.messages.map(msg => ({
             role: msg.role,
             content: msg.content

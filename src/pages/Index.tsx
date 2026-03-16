@@ -5,7 +5,7 @@ import { useUsageLimit } from "@/hooks/useUsageLimit";
 import { useEffect, useRef, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { QuestionForm as QuestionFormType, MessageFile, ChatMode } from "@/types/chat";
+import { QuestionForm as QuestionFormType, MessageFile } from "@/types/chat";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileSidebar } from "@/components/MobileSidebar";
 import { InitialGuide } from "@/components/InitialGuide";
@@ -22,8 +22,6 @@ import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { t } = useLanguage();
-  const [depth, setDepth] = useState(3);
-  const [chatMode, setChatMode] = useState<ChatMode>("socrates");
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -42,8 +40,7 @@ const Index = () => {
     resolveSession,
     deleteSession,
     clearActiveSession,
-    updateSessionTitle,
-    updateSessionMode
+    updateSessionTitle
   } = useChatStorage();
 
   const { user } = useAuth();
@@ -55,26 +52,11 @@ const Index = () => {
     const loadSettings = async () => {
       if (user && !user.isAnonymous) {
         const settings = await getUserSettings(user.uid);
-        setChatMode(settings.chatMode);
-        setDepth(settings.socratesLevel);
+        // depth settings removed
       }
     };
     loadSettings();
   }, [user]);
-
-  const handleDepthChange = async (newDepth: number) => {
-    setDepth(newDepth);
-    if (user && !user.isAnonymous) {
-      await setUserSettings(user.uid, { socratesLevel: newDepth });
-    }
-  };
-
-  const handleChatModeChange = async (newMode: ChatMode) => {
-    setChatMode(newMode);
-    if (user && !user.isAnonymous) {
-      await setUserSettings(user.uid, { chatMode: newMode });
-    }
-  };
 
   // Sync collapsed state with mobile/desktop transition
   useEffect(() => {
@@ -112,7 +94,7 @@ const Index = () => {
     }
   }, [user]);
 
-  const handleCreateSession = async (form: QuestionFormType, depth: number, mode: ChatMode) => {
+  const handleCreateSession = async (form: QuestionFormType) => {
     if (!canUse) {
       setIsUsageModalOpen(true);
       return;
@@ -122,7 +104,7 @@ const Index = () => {
     let createdSessionId: string | null = null;
 
     try {
-      const newSession = await createSession(form, depth, mode);
+      const newSession = await createSession(form, 3); // Default depth is 3
       createdSessionId = newSession.id;
 
       const success = await checkAndIncrementUsage(createdSessionId);
@@ -140,28 +122,17 @@ const Index = () => {
         
 카테고리: ${form.category}
 문제: ${form.problem}
-${form.attempts ? `시도/배경: ${form.attempts}` : ""}
 
 1. 가장 먼저 이미지와 사용자의 질문을 분석하여 세션의 제목을 "TITLE: [제목]" 형식으로 첫 줄에 출력하세요.
 2. 그 다음 줄바꿈 후, "[VERIFICATION_NEEDED]" 태그를 붙이세요.
 3. 그 다음, 사용자가 올린 문제가 맞는지 확인하는 질문을 하세요.
 예시: "이 문제가 맞나요? [문제 내용 요약]"`;
-      } else if (mode === 'direct') {
-        initialPrompt = `사용자가 다음과 같은 상황을 공유했습니다:
-
-카테고리: ${form.category}
-문제: ${form.problem}
-${form.attempts ? `시도/배경: ${form.attempts}` : ""}
-
-1. 가장 먼저 사용자의 질문을 분석하여 세션의 제목을 "TITLE: [제목]" 형식으로 첫 줄에 출력하세요.
-2. 그 다음 줄바꿈 후, 입력된 문제에 대해 질문 없이 바로 명확하고 구체적인 답변을 제공하세요.`;
       } else {
         // 성장 모드
         initialPrompt = `사용자가 다음과 같은 상황을 공유했습니다:
 
 카테고리: ${form.category}
 문제: ${form.problem}
-${form.attempts ? `시도/배경: ${form.attempts}` : ""}
 
 1. 가장 먼저 사용자의 질문을 분석하여 세션의 제목을 "TITLE: [제목]" 형식으로 첫 줄에 출력하세요.
 2. 그 다음 줄바꿈 후, 성장 모드(소크라테스식 대화)를 시작하기 위한 자연스럽고 친근한 첫 질문을 던져주세요.`;
@@ -185,11 +156,6 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
 
       // AI 응답 저장 (정제된 내용)
       await addMessage(createdSessionId, { role: 'assistant', content: cleanResponse });
-
-      // 즉답 모드일 경우 바로 해결 상태로 전환 (소크라테스 모드와 동일하게 입력창 숨김)
-      if (mode === 'direct') {
-        await resolveSession(createdSessionId);
-      }
 
     } catch (err) {
       console.error("❌ 세션 생성 실패:", err);
@@ -295,17 +261,11 @@ ${form.attempts ? `시도/배경: ${form.attempts}` : ""}
                 </div>
               </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center py-12 px-6">
-                <div className="max-w-4xl w-full space-y-8">
-                  <div className="space-y-4 text-center sm:text-left">
-                  </div>
+              <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[15vh] px-6 min-h-[500px]">
+                <div className="max-w-2xl w-full">
 
                   <QuestionForm
                     onSubmit={handleCreateSession}
-                    depth={depth}
-                    onDepthChange={handleDepthChange}
-                    chatMode={chatMode}
-                    onChatModeChange={handleChatModeChange}
                     initialProblem={searchParams.get('problem') || ""}
                   />
                 </div>

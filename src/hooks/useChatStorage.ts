@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { ChatSession, Message, QuestionForm, MessageFile, ChatMode } from '@/types/chat';
+import { ChatSession, Message, QuestionForm, MessageFile } from '@/types/chat';
 
 export function useChatStorage() {
   const { user } = useAuth();
@@ -50,13 +50,11 @@ export function useChatStorage() {
             title: data.title,
             category: data.category || "수학ㆍ과학",
             problem: data.problem,
-            attempts: data.attempts,
 
             depth: data.depth,
             currentStep: data.currentStep,
             messages: data.messages || [],
             isResolved: data.isResolved || false,
-            chatMode: data.chatMode || "socrates",
             createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
             updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now(),
           } as ChatSession;
@@ -76,7 +74,7 @@ export function useChatStorage() {
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || null;
 
-  const createSession = useCallback(async (form: QuestionForm, depth: number, mode: ChatMode): Promise<ChatSession> => {
+  const createSession = useCallback(async (form: QuestionForm, depth: number): Promise<ChatSession> => {
     if (!user) {
       throw new Error('로그인이 필요합니다');
     }
@@ -86,13 +84,11 @@ export function useChatStorage() {
       title: form.problem.slice(0, 30) + (form.problem.length > 30 ? '...' : ''),
       category: form.category,
       problem: form.problem,
-      attempts: form.attempts,
 
       depth,
       currentStep: 0,
       messages: [],
       isResolved: false,
-      chatMode: mode,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -122,13 +118,11 @@ export function useChatStorage() {
         title: newSession.title,
         category: newSession.category as any,
         problem: newSession.problem,
-        attempts: newSession.attempts,
 
         depth: newSession.depth,
         currentStep: 0,
         messages: [],
         isResolved: false,
-        chatMode: mode,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -234,19 +228,6 @@ export function useChatStorage() {
     }
   }, [user]);
 
-  const updateSessionMode = useCallback(async (sessionId: string, mode: string) => {
-    if (!user) return;
-    try {
-      const sessionRef = doc(db, 'conversations', sessionId);
-      await updateDoc(sessionRef, {
-        chatMode: mode,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('세션 모드 업데이트 실패:', error);
-    }
-  }, [user]);
-
   return {
     sessions,
     activeSession,
@@ -258,7 +239,6 @@ export function useChatStorage() {
     deleteSession,
     clearActiveSession,
     updateSessionTitle,
-    updateSessionMode,
     isLoading,
   };
 }

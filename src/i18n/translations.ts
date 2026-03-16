@@ -11,7 +11,6 @@ export const translations = {
         resolve: "완료",
         delete: "삭제",
         problem: "문제",
-        attempts: "시도",
 
         sessions: "대화 목록",
         settings: "설정",
@@ -34,7 +33,6 @@ export const translations = {
         resolve: "Complete",
         delete: "Delete",
         problem: "Problem",
-        attempts: "Attempts",
 
         sessions: "Conversations",
         settings: "Settings",

@@ -15,7 +15,6 @@ export interface Message {
 }
 
 export type Category = "수학ㆍ과학" | "코딩" | "비즈니스ㆍ기획" | "글쓰기ㆍ외국어" | "데이터ㆍ분석" | "기타";
-export type ChatMode = 'socrates' | 'direct';
 
 export interface Spectrums {
   whyVsHow: number;
@@ -52,13 +51,11 @@ export interface ChatSession {
   title: string;
   category: Category;
   problem: string;
-  attempts: string;
 
   depth: number;
   currentStep: number;
   messages: Message[];
   isResolved: boolean;
-  chatMode?: ChatMode;
   createdAt: number;
   updatedAt: number;
 }
@@ -66,6 +63,5 @@ export interface ChatSession {
 export interface QuestionForm {
   category: Category;
   problem: string;
-  attempts: string;
   files?: MessageFile[];
 }

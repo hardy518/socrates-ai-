@@ -47,8 +47,7 @@ export const handler: Handler = async (event) => {
       return {
         id: doc.id,
         title: data.title || '제목 없음',
-        category: data.category || '기타',
-        chatMode: data.chatMode || 'socrates'
+        category: data.category || '기타'
       };
     });
 
@@ -84,10 +83,10 @@ ${JSON.stringify(conversations, null, 2)}
 - categories: 전체 순위 내림차순, 사용한 카테고리만 포함
 - deepConversations: 최대 3개, 제목에서 주제가 깊거나 구체적인 대화 우선, 제목은 원본 그대로 사용, conversationId는 대화 목록의 id 사용
 - whyVsHow: 높을수록 '왜?' 방향 (0=어떻게, 100=왜)
-  socratesCount(chatMode="socrates")가 높을수록 whyVsHow 높은 경향 반영
+  성장 모드 (소크라테스식 대화)의 깊이가 반영됨 
 - emotionVsLogic: 높을수록 감성적 (0=논리, 100=감성)
 - processVsResult: 높을수록 과정 지향 (0=결론, 100=과정)
-  socratesCount(chatMode="socrates")가 높을수록 processVsResult 높은 경향 반영
+  성장 모드 (소크라테스식 대화)의 깊이가 반영됨 
 - spectrumChanges: 지난달 대비 delta (이번값 - 지난달값), 지난달값이 null이면 모두 null
 - comment: 카테고리 + 성향을 자연스럽게, 따뜻한 톤, "이번 달 ${userName}님은 ..." 으로 시작, 2문장 내외
 `;

@@ -10,12 +10,11 @@ import { generateAIResponse, generateFinalAnswer } from "@/lib/claude";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CopyButton } from "./ui/CopyButton";
-import { ChatMode } from "@/types/chat";
 import { getUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatViewProps {
-  session: ChatSession & { chatMode?: ChatMode };
+  session: ChatSession;
   /** 유저가 보낸 메시지용 */
   onSendMessage: (content: string, files?: MessageFile[]) => void;
   /** AI가 보낸 메시지용 */
@@ -35,7 +34,6 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
   const [showEarlyComplete, setShowEarlyComplete] = useState(false);
   const [isEditingProblem, setIsEditingProblem] = useState(false);
   const { user } = useAuth();
-  const effectiveChatMode = session.chatMode || 'socrates';
 
 
   const handleCopyAll = async () => {
@@ -235,9 +233,7 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                       <Share2 className="w-4 h-4" />
                     </button>
                   </div>
-                  {effectiveChatMode !== 'direct' && (
-                    <GrowthGauge current={Math.min(session.currentStep, session.depth)} total={session.depth} />
-                  )}
+                  <GrowthGauge current={Math.min(session.currentStep, session.depth)} total={session.depth} />
                 </div>
               </div>
 
@@ -249,12 +245,6 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                   <span className="font-semibold text-foreground/80 min-w-[50px]">Problem:</span>
                   <p className="truncate flex-1">{session.problem}</p>
                 </div>
-                {session.attempts && (
-                  <div className="flex gap-2">
-                    <span className="font-semibold text-foreground/80 min-w-[50px]">Approach:</span>
-                    <p className="truncate flex-1">{session.attempts}</p>
-                  </div>
-                )}
               </div>
 
             </div>
@@ -277,7 +267,7 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
           )}
 
           {session.messages.map((msg, index) => (
-            <ChatMessage key={msg.id} message={msg} isDirectMode={effectiveChatMode === 'direct'} isLast={index === session.messages.length - 1} />
+            <ChatMessage key={msg.id} message={msg} isDirectMode={false} isLast={index === session.messages.length - 1} />
           ))}
 
           {isLoading && (
@@ -361,11 +351,7 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                   </div>
                 )}
 
-                {(!needsVerification || isEditingProblem) && (
-                  effectiveChatMode === 'direct'
-                    ? !session.messages.some(m => m.role === 'assistant')
-                    : (!session.isResolved && !isComplete)
-                ) && (
+                {(!needsVerification || isEditingProblem) && (!session.isResolved && !isComplete) && (
                     <ChatInput
                       onSend={handleSend}
                       isLoading={isLoading}
@@ -373,19 +359,14 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                       placeholder={
                         isEditingProblem
                           ? "문제를 보완할 수 있도록 입력해 주세요"
-                          : effectiveChatMode === 'direct'
-                            ? "해결하고 싶은 문제를 입력해 주세요"
-                            : "이어서 생각해 볼까요?"
+                          : "이어서 생각해 볼까요?"
                       }
                       autoFocus={isEditingProblem}
                     />
                   )}
 
 
-                {/* Direct Mode에서는 이미 정답 UI로 답변이 제공되므로 정답 확인 버튼들을 숨김 */}
-                {effectiveChatMode !== 'direct' && (
-                  <>
-                    {showEarlyComplete && (
+                {showEarlyComplete && (
                       <div className="flex flex-col gap-3 py-4 items-center bg-background/95 backdrop-blur-sm rounded-xl">
                         <button
                           onClick={handleViewAnswer}
@@ -412,8 +393,6 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                         </button>
                       </div>
                     )}
-                  </>
-                )}
               </div>
             </div>
           )

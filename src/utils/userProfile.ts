@@ -1,10 +1,8 @@
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { ChatMode, Insight } from "@/types/chat";
+import { Insight } from "@/types/chat";
 
 export interface UserSettings {
-    chatMode: ChatMode;
-    socratesLevel: number;
     conversationCount?: number;
     insightBadge?: boolean;
     insight?: Insight;
@@ -17,15 +15,13 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
         if (userDoc.exists()) {
             const data = userDoc.data();
             return {
-                chatMode: (data.chatMode as ChatMode) || "socrates",
-                socratesLevel: data.socratesLevel || 3,
                 insightNotification: data.insightNotification !== undefined ? data.insightNotification : true
             };
         }
-        return { chatMode: "socrates", socratesLevel: 3, insightNotification: true };
+        return { insightNotification: true };
     } catch (error) {
         console.error("Error getting user settings:", error);
-        return { chatMode: "socrates", socratesLevel: 3 };
+        return {};
     }
 };
 

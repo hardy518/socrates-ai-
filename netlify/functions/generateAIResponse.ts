@@ -1,18 +1,9 @@
 import { Handler } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
 
-const GET_SYSTEM_PROMPT = (category: string, mode = 'socrates', depth = 3) => {
+const GET_SYSTEM_PROMPT = (category: string, depth = 3) => {
     const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
     const baseInstruction = `당신은 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다. 친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
-
-    if (mode === 'direct') {
-        return `${baseInstruction}
-    
-핵심 역할:
-- 질문 없이 입력한 문제에 바로 명확하고 구체적인 답변을 제공하세요.
-- 불필요한 서술이나 유도 질문은 생략하고 결론부터 제시합니다.
-- 사용자가 즉각적인 해결책을 원하므로, 복잡한 내용도 핵심 위주로 명확하게 전달하세요.`;
-    }
 
     const socratesInstruction = `${baseInstruction}
 
@@ -85,7 +76,7 @@ export const handler: Handler = async (event) => {
 
     const { session, userMessage, files } = JSON.parse(event.body || "{}");
     const client = new Anthropic({ apiKey });
-    const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.chatMode, session.depth) + COMMON_RULES;
+    const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.depth) + COMMON_RULES;
 
     const userContent: any[] = [{ type: "text", text: userMessage }];
 

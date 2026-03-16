@@ -1,6 +1,7 @@
 import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, Pencil, LogOut, User, LayoutDashboard, Headset } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export function MobileSidebar({
 }: MobileSidebarProps) {
   const { user, signInWithGoogle, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -94,7 +96,7 @@ export function MobileSidebar({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="left"
-        className="h-full w-[300px] p-0 flex flex-col bg-background border-r border-border shadow-xl [&>button]:hidden"
+        className="h-full w-[300px] p-0 flex flex-col bg-[#F0F0F0] border-r border-border/50 shadow-xl [&>button]:hidden text-black"
       >
 
         {/* Search & New Chat - Fixed at top below header */}
@@ -106,16 +108,16 @@ export function MobileSidebar({
               placeholder="채팅 검색"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-secondary/50 border border-border/50 rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full bg-white border border-gray-300 rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-black"
             />
           </div>
 
           <SheetClose asChild>
             <button
               onClick={onNewSession}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-foreground bg-secondary/80 hover:bg-secondary transition-all"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-black bg-black/5 hover:bg-black/10 transition-all"
             >
-              <Plus className="w-5 h-5 text-primary" />
+              <Plus className="w-5 h-5 text-black" />
               <span>새 채팅</span>
             </button>
           </SheetClose>
@@ -123,7 +125,7 @@ export function MobileSidebar({
 
         {/* Chat List - Scrollable middle part */}
         <div className="px-5 py-2 flex-shrink-0">
-          <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">최근 대화</span>
+          <span className="text-xs font-bold text-black/60 uppercase tracking-wider">최근 대화</span>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 space-y-1">
@@ -157,8 +159,8 @@ export function MobileSidebar({
                       <button
                         onClick={() => onSelectSession(session.id)}
                         className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all min-w-0 ${activeSessionId === session.id
-                          ? 'bg-primary/10 text-primary font-medium'
-                          : 'text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+                          ? 'bg-primary text-white font-medium shadow-sm'
+                          : 'text-black hover:bg-black/5'
                           }`}
                       >
                         {session.isResolved ? (
@@ -210,7 +212,27 @@ export function MobileSidebar({
         </div>
 
         {/* Profile Section - Fixed at bottom */}
-        <div className="p-3 border-t border-border/50 bg-background mt-auto">
+        <div className="p-3 border-t border-border/50 bg-background mt-auto flex flex-col gap-1">
+          <Button
+            variant="ghost"
+            className={cn(
+              "w-full h-auto p-3 rounded-xl transition-all justify-start gap-3 hover:bg-secondary/80",
+              location.pathname === "/my-insight" ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "text-foreground"
+            )}
+            onClick={() => {
+              navigate("/my-insight");
+              onOpenChange(false);
+            }}
+          >
+            <LayoutDashboard className={cn("w-5 h-5", location.pathname === "/my-insight" ? "text-[#7C3AED]" : "text-black")} />
+            <div className="flex items-center gap-2 flex-1">
+              <span className="font-semibold text-black text-sm">나의 인사이트</span>
+              {showInsightBadge && (
+                <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
+              )}
+            </div>
+          </Button>
+
           {user && !user.isAnonymous ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -248,20 +270,7 @@ export function MobileSidebar({
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    navigate('/my-insight');
-                  }}
-                  className="cursor-pointer"
-                >
-                  <LayoutDashboard className="w-4 h-4 mr-2" />
-                  <div className="flex items-center gap-2 flex-1">
-                    <span>나의 인사이트</span>
-                    {showInsightBadge && (
-                      <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
-                    )}
-                  </div>
-                </DropdownMenuItem>
+
                 <DropdownMenuItem
                   onClick={() => {
                     window.open('https://socratestutor.channel.io', '_blank');

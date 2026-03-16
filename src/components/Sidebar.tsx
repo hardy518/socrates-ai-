@@ -4,6 +4,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 import { Plus, Trash2, MessageSquare, Menu, CheckCircle2, User, LogOut, Settings, MoreVertical, Pencil, Pin, Check, X, CreditCard, Search, Star, History, Bookmark, LayoutDashboard, Headset } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ChatSession } from "@/types/chat";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -88,7 +89,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className={`${isCollapsed ? 'w-14' : 'w-[300px]'} bg-secondary/50 flex-col h-screen transition-all duration-300 flex sticky top-0`}>
+    <aside className={`${isCollapsed ? 'w-14' : 'w-[300px]'} bg-[#F0F0F0] text-black flex-col h-screen transition-all duration-300 flex sticky top-0 border-r border-border/50`}>
       {/* 상단: 메뉴 + 검색 + 새 대화 */}
       <div className="p-3 flex flex-col gap-4 flex-shrink-0">
         <button
@@ -101,7 +102,7 @@ export function Sidebar({
         {isCollapsed && (
           <button
             onClick={onNewSession}
-            className="p-2 rounded-lg text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors mx-auto"
+            className="p-2 rounded-lg text-black hover:bg-black/5 transition-colors mx-auto"
             title="새 채팅"
           >
             <Plus className="w-5 h-5" />
@@ -117,16 +118,16 @@ export function Sidebar({
                 placeholder="채팅 검색"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-background/50 border border-border/50 rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full bg-white border border-gray-300 rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-black"
               />
             </div>
 
             <div className="space-y-1">
               <button
                 onClick={onNewSession}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-all"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-black hover:bg-black/5 transition-all"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-5 h-5 text-black" />
                 <span>새 채팅</span>
               </button>
             </div>
@@ -136,7 +137,7 @@ export function Sidebar({
 
       {!isCollapsed && (
         <div className="px-4 py-2">
-          <span className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-wider">채팅</span>
+          <span className="text-xs font-bold text-black/60 uppercase tracking-wider">채팅</span>
         </div>
       )}
 
@@ -184,14 +185,14 @@ export function Sidebar({
                     <button
                       onClick={() => onSelectSession(session.id)}
                       className={`flex-1 flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all min-w-0 ${activeSessionId === session.id
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+                        ? 'bg-primary text-white font-medium shadow-sm'
+                        : 'text-black hover:bg-black/5'
                         }`}
                     >
                       {session.isResolved ? (
-                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${activeSessionId === session.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${activeSessionId === session.id ? 'text-white' : 'text-black/60'}`} />
                       ) : (
-                        <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                        <MessageSquare className={`w-4 h-4 flex-shrink-0 ${activeSessionId === session.id ? 'text-white' : 'text-black/60'}`} />
                       )}
                       <span className="truncate flex-1 text-left">{session.title}</span>
                     </button>
@@ -246,7 +247,24 @@ export function Sidebar({
       {!isCollapsed && (
         <div className="p-3 space-y-3">
 
-          <div className="border-t border-border/50 pt-3">
+          <div className="border-t border-border/50 pt-3 flex flex-col gap-1">
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full h-auto p-3 rounded-xl transition-all justify-start gap-3 hover:bg-secondary/80",
+                location.pathname === "/my-insight" ? "bg-[#7C3AED]/10 text-[#7C3AED]" : "text-foreground"
+              )}
+              onClick={() => navigate("/my-insight")}
+            >
+              <LayoutDashboard className={cn("w-5 h-5", location.pathname === "/my-insight" ? "text-[#7C3AED]" : "text-black")} />
+              <div className="flex items-center gap-2 flex-1">
+                <span className="font-semibold text-black">나의 인사이트</span>
+                {showInsightBadge && (
+                  <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
+                )}
+              </div>
+            </Button>
+
             {user && !user.isAnonymous ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -279,6 +297,7 @@ export function Sidebar({
                     </div>
                   </div>
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem 
                     className="gap-3 p-3 rounded-xl cursor-pointer"
                     onClick={() => navigate("/my-insight")}
@@ -291,6 +310,7 @@ export function Sidebar({
                       )}
                     </div>
                   </DropdownMenuItem>
+
                   <DropdownMenuItem
                     onClick={() => {
                       window.open('https://socratestutor.channel.io', '_blank');
@@ -340,9 +360,83 @@ export function Sidebar({
 
       {isCollapsed && (
         <div className="p-2 border-t border-border/50 flex-shrink-0 flex flex-col items-center gap-4 py-4 mt-auto">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mx-auto">
-            {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
-          </div>
+          {user && !user.isAnonymous ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mx-auto hover:ring-2 hover:ring-primary/20 transition-all">
+                  {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="end" className="w-64 mb-2 ml-2">
+                <div className="flex items-center gap-3 px-2 py-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                    {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {user?.displayName || "사용자"}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {user?.email}
+                    </div>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem 
+                  className="gap-3 p-3 rounded-xl cursor-pointer"
+                  onClick={() => navigate("/my-insight")}
+                >
+                  <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex items-center gap-2 flex-1">
+                    <span className="font-medium">나의 인사이트</span>
+                    {showInsightBadge && (
+                      <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => {
+                    window.open('https://socratestutor.channel.io', '_blank');
+                  }}
+                  className="cursor-pointer gap-3 p-3 rounded-xl"
+                >
+                  <Headset className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">고객 센터</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/settings')}
+                  className="cursor-pointer gap-3 p-3 rounded-xl"
+                >
+                  <Settings className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">설정</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/pricing')}
+                  className="cursor-pointer gap-3 p-3 rounded-xl text-primary font-bold"
+                >
+                  <Star className="w-4 h-4 mr-2 text-blue-600" />
+                  <span>프로 요금제로 업그레이드</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  <span>로그아웃</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <button 
+              onClick={handleSignIn}
+              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-secondary transition-all"
+            >
+              <User className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )}
     </aside>
