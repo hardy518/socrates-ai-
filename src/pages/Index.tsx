@@ -40,12 +40,13 @@ const Index = () => {
     resolveSession,
     deleteSession,
     clearActiveSession,
-    updateSessionTitle
+    updateSessionTitle,
+    togglePinSession,
   } = useChatStorage();
 
   const { user } = useAuth();
 
-  const { canUse, remainingCount, checkAndIncrementUsage } = useUsageLimit();
+  const { canUse, checkAndIncrementUsage } = useUsageLimit();
 
   // Load settings from user profile
   useEffect(() => {
@@ -206,6 +207,7 @@ const Index = () => {
           onNewSession={clearActiveSession}
           onDeleteSession={deleteSession}
           onUpdateTitle={updateSessionTitle}
+          onTogglePin={togglePinSession}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
@@ -219,6 +221,7 @@ const Index = () => {
         onNewSession={clearActiveSession}
         onDeleteSession={deleteSession}
         onUpdateTitle={updateSessionTitle}
+        onTogglePin={togglePinSession}
         open={isMobileSidebarOpen}
         onOpenChange={setIsMobileSidebarOpen}
       />
@@ -256,9 +259,6 @@ const Index = () => {
                     )} />
                   </div>
                 </Button>
-                <div className="flex items-center gap-2 ml-3">
-                  <span className="font-bold text-lg tracking-tight text-foreground">Socrates : Think deeper</span>
-                </div>
               </div>
 
               <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[15vh] px-6 min-h-[500px]">

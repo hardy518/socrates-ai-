@@ -1,4 +1,4 @@
-import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, Pencil, LogOut, User, LayoutDashboard, Headset } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, PinOff, Pencil, LogOut, User, LayoutDashboard, Headset, Share2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RenameModal } from "./RenameModal";
+import { checkIsPro } from "@/utils/subscription";
+import { toast } from "sonner";
 
 interface MobileSidebarProps {
   sessions: ChatSession[];
@@ -27,6 +30,7 @@ interface MobileSidebarProps {
   onNewSession: () => void;
   onDeleteSession: (id: string) => void;
   onUpdateTitle: (id: string, newTitle: string) => void;
+  onTogglePin: (id: string, isPinned: boolean) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -38,6 +42,7 @@ export function MobileSidebar({
   onNewSession,
   onDeleteSession,
   onUpdateTitle,
+  onTogglePin,
   open,
   onOpenChange,
 }: MobileSidebarProps) {
@@ -46,11 +51,14 @@ export function MobileSidebar({
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [editTitle, setEditTitle] = useState("");
+  const [editingTitle, setEditingTitle] = useState("");
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [showInsightBadge, setShowInsightBadge] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
+      checkIsPro(user.uid).then(setIsPro);
       const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
         if (doc.exists()) {
           setShowInsightBadge(doc.data().insightBadge === true);
@@ -82,14 +90,34 @@ export function MobileSidebar({
 
   const handleRenameStart = (id: string, title: string) => {
     setEditingSessionId(id);
-    setEditTitle(title);
+    setEditingTitle(title);
+    setIsRenameModalOpen(true);
   };
 
-  const handleRenameSave = (id: string) => {
-    if (editTitle.trim()) {
-      onUpdateTitle(id, editTitle.trim());
+  const handleRenameSave = (newTitle: string) => {
+    if (editingSessionId && newTitle.trim()) {
+      onUpdateTitle(editingSessionId, newTitle.trim());
     }
     setEditingSessionId(null);
+  };
+
+  const handleShare = async (session: ChatSession) => {
+    const url = `${window.location.origin}?session=${session.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: session.title,
+          url: url
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          toast.error("공유에 실패했습니다.");
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("링크가 클립보드에 복사되었습니다.");
+    }
   };
 
   return (
@@ -140,57 +168,58 @@ export function MobileSidebar({
                 className="group flex items-center gap-1 rounded-lg"
               >
                 <div className="flex-1 flex items-center min-w-0">
-                  {editingSessionId === session.id ? (
-                    <div className="flex-1 flex items-center gap-1">
-                      <input
-                        autoFocus
-                        className="flex-1 bg-background border border-primary/30 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleRenameSave(session.id);
-                          if (e.key === 'Escape') setEditingSessionId(null);
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                  ) : (
-                    <SheetClose asChild>
-                      <button
-                        onClick={() => onSelectSession(session.id)}
-                        className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all min-w-0 ${activeSessionId === session.id
-                          ? 'bg-primary text-white font-medium shadow-sm'
-                          : 'text-black hover:bg-black/5'
-                          }`}
-                      >
-                        {session.isResolved ? (
-                          <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${activeSessionId === session.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                        ) : (
-                          <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                        )}
-                        <span className="truncate flex-1 text-left">{session.title}</span>
-                      </button>
-                    </SheetClose>
-                  )}
+                  <SheetClose asChild>
+                    <button
+                      onClick={() => onSelectSession(session.id)}
+                      className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all min-w-0 ${activeSessionId === session.id
+                        ? 'bg-primary text-white font-medium shadow-sm'
+                        : 'text-black hover:bg-black/5'
+                        }`}
+                    >
+                      {session.isResolved ? (
+                        <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${activeSessionId === session.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                      ) : (
+                        <MessageSquare className="w-4 h-4 flex-shrink-0" />
+                      )}
+                      <span className="truncate flex-1 text-left">{session.title}</span>
+                    </button>
+                  </SheetClose>
                 </div>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       onClick={(e) => e.stopPropagation()}
-                      className={`p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-all shrink-0 ${activeSessionId === session.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        }`}
+                      className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-all shrink-0 opacity-100"
                     >
-                      <MoreVertical className="w-4 h-4" />
+                      {session.isPinned ? (
+                        <Pin className="w-4 h-4 text-primary" />
+                      ) : (
+                        <MoreVertical className="w-4 h-4" />
+                      )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-40">
                     <DropdownMenuItem
                       className="gap-2"
+                      onClick={(e) => { e.stopPropagation(); handleShare(session); }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>대화 공유</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={(e) => { e.stopPropagation(); onTogglePin(session.id, !session.isPinned); }}
+                    >
+                      {session.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                      <span>{session.isPinned ? "고정 해제" : "고정"}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2"
                       onClick={(e) => { e.stopPropagation(); handleRenameStart(session.id, session.title); }}
                     >
                       <Pencil className="w-4 h-4" />
-                      <span>제목 변경</span>
+                      <span>이름 변경</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="gap-2 text-destructive focus:text-destructive"
@@ -287,13 +316,15 @@ export function MobileSidebar({
                   <Settings className="w-4 h-4 mr-2" />
                   <span>설정</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate('/pricing')}
-                  className="cursor-pointer"
-                >
-                  <Star className="w-4 h-4 mr-2 text-blue-600" />
-                  <span>프로 요금제로 업그레이드</span>
-                </DropdownMenuItem>
+                {!isPro && (
+                  <DropdownMenuItem
+                    onClick={() => navigate('/pricing')}
+                    className="cursor-pointer"
+                  >
+                    <Star className="w-4 h-4 mr-2 text-blue-600" />
+                    <span>프로 요금제로 업그레이드</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}
@@ -316,6 +347,12 @@ export function MobileSidebar({
           )}
         </div>
       </SheetContent>
+      <RenameModal
+        isOpen={isRenameModalOpen}
+        onClose={() => setIsRenameModalOpen(false)}
+        onRename={handleRenameSave}
+        initialTitle={editingTitle}
+      />
     </Sheet>
   );
 }

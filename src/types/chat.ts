@@ -56,6 +56,7 @@ export interface ChatSession {
   currentStep: number;
   messages: Message[];
   isResolved: boolean;
+  isPinned?: boolean;
   createdAt: number;
   updatedAt: number;
 }

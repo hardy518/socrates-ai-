@@ -55,9 +55,14 @@ export function useChatStorage() {
             currentStep: data.currentStep,
             messages: data.messages || [],
             isResolved: data.isResolved || false,
+            isPinned: data.isPinned || false,
             createdAt: data.createdAt?.toMillis?.() || data.createdAt || Date.now(),
             updatedAt: data.updatedAt?.toMillis?.() || data.updatedAt || Date.now(),
           } as ChatSession;
+        }).sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1;
+          if (!a.isPinned && b.isPinned) return 1;
+          return b.updatedAt - a.updatedAt;
         });
 
         setSessions(sessionsData);
@@ -106,7 +111,7 @@ export function useChatStorage() {
         updatedAt: serverTimestamp()
       });
 
-      if (currentCount % 10 === 0) {
+      if (currentCount % 5 === 0) {
         // 백그라운드에서 분석 호출 (UI 차단 방지)
         import('@/lib/claude').then(({ analyzeInsight }) => {
           analyzeInsight(user.uid, currentCount).catch(console.error);
@@ -227,6 +232,19 @@ export function useChatStorage() {
       console.error('세션 제목 업데이트 실패:', error);
     }
   }, [user]);
+  
+  const togglePinSession = useCallback(async (sessionId: string, isPinned: boolean) => {
+    if (!user) return;
+    try {
+      const sessionRef = doc(db, 'conversations', sessionId);
+      await updateDoc(sessionRef, {
+        isPinned: isPinned,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('세션 고정 업데이트 실패:', error);
+    }
+  }, [user]);
 
   return {
     sessions,
@@ -239,6 +257,7 @@ export function useChatStorage() {
     deleteSession,
     clearActiveSession,
     updateSessionTitle,
+    togglePinSession,
     isLoading,
   };
 }

@@ -50,12 +50,12 @@ export function UsageLimitModal({ isOpen, onClose }: UsageLimitModalProps) {
             <span className="material-icons text-3xl text-primary">auto_awesome</span>
           </div>
           <DialogTitle className="text-2xl font-bold text-center text-slate-900 dark:text-white">
-            {isPro ? "이번 달 대화를 모두 사용했어요" : "오늘 무료 대화 5회를 모두 사용했어요"}
+            사용량을 모두 사용했어요
           </DialogTitle>
           <DialogDescription className="text-center text-slate-500 dark:text-slate-400 text-base leading-relaxed">
             {isPro 
-              ? "이미 Pro 멤버십을 이용 중이시네요! 원활한 서비스 제공을 위해 설정된 월간 제한에 도달했습니다. 궁금한 점이 있다면 언제든 문의해 주세요."
-              : "소크라테스 AI와 더 깊은 대화를 나누고 싶으신가요? Pro 플랜으로 업그레이드하면 매일 무제한에 가까운 대화와 더 많은 기능을 이용할 수 있습니다."}
+              ? "이미 Pro 멤버십을 이용 중이시네요! 원활한 서비스 제공을 위해 설정된 기간별 사용량 한도에 도달했습니다. 잠시 후 다시 이용해 주세요."
+              : "소크라테스 AI와 더 깊은 대화를 나누고 싶으신가요? Pro 플랜으로 업그레이드하면 더 넉넉한 대화 한도와 추가 기능을 이용할 수 있습니다."}
           </DialogDescription>
         </DialogHeader>
 
