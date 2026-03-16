@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserSettings, setUserSettings } from "@/utils/userProfile";
+import { UserSettings, getUserSettings, setUserSettings } from "@/utils/userProfile";
 import { checkIsPro } from "@/utils/subscription";
 import { 
   BarChart, 
@@ -9,9 +9,15 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
+  Tooltip as RechartsTooltip, 
   ResponsiveContainer, 
-  Cell 
+  Cell,
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  LabelList
 } from "recharts";
 import { 
   ArrowLeft, 
@@ -23,19 +29,20 @@ import {
   ArrowUpRight,
   Sparkles,
   Menu,
-  Plus
+  Plus,
+  Info
 } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { MobileSidebar } from "@/components/MobileSidebar";
 import { useChatStorage } from "@/hooks/useChatStorage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SubPageNav } from "@/components/SubPageNav";
+import { cn } from "@/lib/utils";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { UserSettings } from "@/utils/userProfile";
-import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { useUsageLimit } from "@/hooks/useUsageLimit";
+import { doc, getDoc } from "firebase/firestore";
 
 const MyInsight = () => {
   const { user, loading: authLoading } = useAuth();
@@ -47,6 +54,7 @@ const MyInsight = () => {
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("summary");
 
   const {
     sessions,
@@ -85,6 +93,32 @@ const MyInsight = () => {
     fetchData();
   }, [user, authLoading, navigate]);
 
+  // Scroll tracking for mobile nav
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sections = ['summary', 'interests', 'conversations', 'spectrum'];
+    
+    sections.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [loading]);
 
   // Sync collapsed state with mobile/desktop transition
   useEffect(() => {
@@ -106,43 +140,56 @@ const MyInsight = () => {
   const sessionsToNextUpdate = 5 - (conversationCount % 5);
   // Show guide if we need more sessions for the next update
   const showGuide = sessionsToNextUpdate > 0;
-  const insight = profile?.insight;
+  const EXAMPLE_INSIGHT = {
+    comment: "예시 분석: 당신은 논리적인 추론을 바탕으로 문제의 근본 원인을 탐구하는 성향이 강합니다. 특히 복잡한 현상을 구조화하여 이해하려는 노력이 돋보이며, 감성적인 공감보다는 객관적인 사실에 기반한 결론을 도출하는 데 집중하는 편입니다.",
+    categories: [
+      { name: "수학ㆍ과학", count: 12 },
+      { name: "코딩", count: 8 },
+      { name: "비즈니스ㆍ기획", count: 7 },
+      { name: "글쓰기ㆍ외국어", count: 5 },
+      { name: "데이터ㆍ분석", count: 4 },
+      { name: "기타", count: 2 }
+    ],
+    deepConversations: [
+      { title: "자유의지와 결정론에 대하여", conversationId: "example-1", count: 24 },
+      { title: "인공지능의 자의식 가능성", conversationId: "example-2", count: 18 },
+      { title: "양자역학의 해석 문제", conversationId: "example-3", count: 15 },
+      { title: "도덕적 허무주의에 대한 비판", conversationId: "example-4", count: 12 },
+      { title: "현대 사회의 소외 현상", conversationId: "example-5", count: 8 }
+    ],
+    spectrums: {
+      whyVsHow: 85,
+      emotionVsLogic: 20,
+      processVsResult: 70
+    },
+    spectrumChanges: {
+      whyVsHow: 5,
+      emotionVsLogic: -2,
+      processVsResult: 10
+    }
+  };
+
+  const isExample = (profile?.conversationCount || 0) < 5;
+  const displayInsight = isExample ? EXAMPLE_INSIGHT : profile?.insight;
 
   // Formatting categories for Recharts
-  const chartData = insight?.categories?.map(cat => ({
-    name: cat.name,
-    count: cat.count
-  })) || [];
+  const chartData = displayInsight?.categories
+    ? [...displayInsight.categories]
+        .sort((a, b) => b.count - a.count)
+        .map(cat => ({
+          name: cat.name,
+          count: cat.count
+        }))
+    : [];
 
-  const renderSpectrumBar = (label: string, value: number, leftLabel: string, rightLabel: string, change: number | null) => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-end">
-        <span className="text-sm font-bold text-foreground/80">{label}</span>
-        {change !== null && change !== 0 && (
-          <span className={cn(
-            "text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider",
-            change > 0 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300" : "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-          )}>
-            {change > 0 ? `+${change}` : change}
-          </span>
-        )}
-      </div>
-      <div className="relative h-1.5 bg-secondary/50 rounded-full overflow-hidden">
-        <div 
-          className="absolute top-0 bottom-0 bg-primary/80 transition-all duration-1000 ease-out"
-          style={{ 
-            left: `${Math.min(50, value)}%`, 
-            right: `${100 - Math.max(50, value)}%` 
-          }}
-        />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-3 bg-border" />
-      </div>
-      <div className="flex justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-        <span>{leftLabel}</span>
-        <span>{rightLabel}</span>
-      </div>
-    </div>
-  );
+  const radarData = displayInsight ? [
+    { subject: '이유(Why)', value: displayInsight.spectrums.whyVsHow, fullMark: 100 },
+    { subject: '감성(Emotion)', value: displayInsight.spectrums.emotionVsLogic, fullMark: 100 },
+    { subject: '과정(Process)', value: displayInsight.spectrums.processVsResult, fullMark: 100 },
+    { subject: '방법(How)', value: 100 - displayInsight.spectrums.whyVsHow, fullMark: 100 },
+    { subject: '논리(Logic)', value: 100 - displayInsight.spectrums.emotionVsLogic, fullMark: 100 },
+    { subject: '결과(Result)', value: 100 - displayInsight.spectrums.processVsResult, fullMark: 100 },
+  ] : [];
 
   const formatResetDate = (timestamp: any) => {
     if (!timestamp) return "";
@@ -217,7 +264,7 @@ const MyInsight = () => {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h1 className="font-bold text-base">나의 인사이트</h1>
+              <h1 className="font-medium text-base text-black">나의 인사이트</h1>
             </div>
             
             <div className="flex items-center gap-2">
@@ -232,6 +279,16 @@ const MyInsight = () => {
           </div>
         </header>
 
+        {/* Mobile Sub-Navigation */}
+        {isMobile && (
+          <SubPageNav 
+            items={sections}
+            activeId={activeSection}
+            onItemClick={scrollToSection}
+            className="sm:hidden"
+          />
+        )}
+
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-16">
             <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
@@ -239,74 +296,76 @@ const MyInsight = () => {
               {/* Left Section Navigation (Sticky on Desktop) */}
               <aside className="hidden lg:block w-48 shrink-0">
                 <div className="sticky top-12 space-y-8">
-                  <h2 className="text-2xl font-black text-foreground/90 px-3 tracking-tight">Insight</h2>
-                  <nav className="space-y-1">
-                    {sections.map((section) => (
-                      <button
-                        key={section.id}
-                        onClick={() => scrollToSection(section.id)}
-                        className="w-full text-left px-3 py-2.5 rounded-xl text-[15px] font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
-                      >
-                        {section.label}
-                      </button>
-                    ))}
-                  </nav>
+                  <h2 className="text-2xl font-bold text-black px-3 tracking-tight">Insight</h2>
+                    <nav className="space-y-1">
+                      {sections.map((section) => (
+                        <button
+                          key={section.id}
+                          onClick={() => scrollToSection(section.id)}
+                          className="w-full text-left px-3 py-2.5 rounded-xl text-[15px] font-medium text-black hover:bg-secondary transition-all"
+                        >
+                          {section.label}
+                        </button>
+                      ))}
+                    </nav>
                 </div>
               </aside>
 
               {/* Main Content Area */}
-              <div className="flex-1 min-w-0 space-y-24">
-                {/* Profile Section */}
-                <section id="profile" className="flex flex-col sm:flex-row items-center gap-8 pb-4">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center border border-primary/10 shadow-sm shrink-0">
-                    {user?.photoURL ? (
-                      <img src={user.photoURL} alt={user.displayName || ""} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <User className="w-12 h-12 text-primary/40" />
-                    )}
-                  </div>
-                  <div className="flex-1 text-center sm:text-left space-y-2.5">
-                    <h2 className="text-4xl font-black text-foreground tracking-tight">{user?.displayName || "Socrates User"}</h2>
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.15em]",
-                        isPro ? "bg-primary text-white" : "bg-black/5 text-muted-foreground"
-                      )}>
-                        {isPro ? "PRO Member" : "Free Plan"}
-                      </span>
-                      <span className="text-xs text-muted-foreground font-bold tracking-tight">
-                        Joined {user?.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "-"}
-                      </span>
+              <div className="flex-1 min-w-0 space-y-16 lg:space-y-20">
+                {/* Welcome & Guide Banner (Visible only for new users) */}
+                {isExample && (
+                  <section className="bg-primary/5 border border-primary/10 rounded-[32px] p-10 relative overflow-hidden max-w-2xl">
+                    <div className="relative z-10 space-y-4 text-center sm:text-left">
+                      <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight leading-tight">
+                        대화 5회를 완료하고<br />당신만의 AI 인사이트를 받아보세요
+                      </h2>
+                      <p className="text-sm sm:text-base font-medium text-muted-foreground/80 leading-relaxed">
+                        소크라테스와 깊은 대화를 나눌수록 분석이 정교해집니다.<br />
+                        현재는 서비스 이해를 돕기 위한 <span className="text-primary font-bold">예시 데이터</span>가 표시되고 있습니다.
+                      </p>
+                      <div className="pt-2">
+                        <Button 
+                          onClick={() => navigate("/")}
+                          className="rounded-full px-8 py-6 text-base font-bold shadow-sm"
+                        >
+                          대화 시작하기
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </section>
+                  </section>
+                )}
 
-                <div className="space-y-32">
+                <div className="space-y-16 lg:space-y-20">
                   {/* AI Summary Section */}
                   <section id="summary" className="space-y-6 scroll-mt-24">
-                    <div className="flex items-center gap-3">
-                      <Sparkles className="w-5 h-5 text-primary" />
-                      <h3 className="text-xl font-black text-foreground tracking-tight">AI 분석 요약</h3>
-                    </div>
-                    <div className="bg-white border border-border shadow-sm rounded-[32px] p-10 relative overflow-hidden group max-w-2xl">
-                      <div className="absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
-                        <Sparkles className="w-32 h-32 text-primary" />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                        <h3 className="text-xl font-medium text-black tracking-tight">AI 분석 요약</h3>
                       </div>
+                    </div>
+                    <div className={cn(
+                      "bg-white border border-border shadow-sm rounded-[32px] p-10 relative overflow-hidden group max-w-2xl",
+                      isExample && "opacity-90"
+                    )}>
                       <p className="text-lg font-medium text-foreground/90 leading-relaxed whitespace-pre-wrap relative z-10 antialiased">
-                        {insight?.comment || "충분한 데이터가 쌓이면 AI가 당신의 성향을 분석해 드립니다."}
+                        {displayInsight?.comment || "충분한 데이터가 쌓이면 AI가 당신의 성향을 분석해 드립니다."}
                       </p>
                     </div>
                   </section>
 
                   {/* Interests Chart */}
-                  <section id="interests" className="space-y-8 scroll-mt-24">
-                    <div className="flex items-center gap-3 text-foreground font-black text-xl tracking-tight">
-                      <TrendingUp className="w-5 h-5 text-primary" />
-                      <h3>나의 관심 분야</h3>
+                  <section id="interests" className="space-y-6 scroll-mt-24">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3 text-black font-medium text-xl tracking-tight">
+                        <TrendingUp className="w-5 h-5 text-primary" />
+                        <h3>나의 관심 분야</h3>
+                      </div>
                     </div>
                     
                     <div className="bg-white border border-border shadow-sm rounded-[32px] p-8 lg:p-12 max-w-2xl group hover:shadow-md transition-all">
-                    <div className="h-80 w-full px-2">
+                    <div className="h-[280px] w-full px-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 40, top: 0, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="rgba(0,0,0,0.03)" />
@@ -316,21 +375,47 @@ const MyInsight = () => {
                             type="category" 
                             axisLine={false} 
                             tickLine={false} 
-                            width={140}
-                            tick={{ fill: 'currentColor', fontSize: 13, fontWeight: 700, letterSpacing: '-0.02em' }}
+                            width={180}
+                            tick={(props) => {
+                              const { x, y, payload, index } = props;
+                              return (
+                                <g transform={`translate(${x},${y})`}>
+                                  <text
+                                    x={-170}
+                                    y={0}
+                                    dy={4}
+                                    textAnchor="start"
+                                    fill="#000"
+                                    style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}
+                                  >
+                                    <tspan fill="#000" opacity={0.3} className="mr-2">{index + 1}</tspan>
+                                    <tspan dx={12}>{payload.value}</tspan>
+                                  </text>
+                                </g>
+                              );
+                            }}
                           />
-                          <Tooltip 
-                            cursor={{ fill: 'rgba(var(--primary-rgb), 0.03)', radius: 12 }}
-                            contentStyle={{ borderRadius: '20px', border: '1px solid rgba(var(--primary-rgb), 0.1)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', fontSize: '13px', fontWeight: 700, padding: '12px 16px' }}
-                          />
+
                           <Bar dataKey="count" radius={[0, 10, 10, 0]} barSize={32}>
-                            {chartData.map((entry, index) => (
-                              <Cell 
-                                key={`cell-${index}`} 
-                                fill={index === 0 ? 'var(--primary)' : 'rgba(var(--primary-rgb), 0.15)'} 
-                                className="hover:opacity-80 transition-all duration-300"
-                              />
-                            ))}
+                            {chartData.map((entry, index) => {
+                              let opacity = 0.25;
+                              if (index === 0) opacity = 1;
+                              else if (index === 1) opacity = 0.7;
+                              else if (index === 2) opacity = 0.45;
+                              
+                              return (
+                                <Cell 
+                                  key={`cell-${index}`} 
+                                  fill={`rgba(var(--primary-rgb), ${opacity})`} 
+                                />
+                              );
+                            })}
+                            <LabelList 
+                              dataKey="count" 
+                              position="right" 
+                              formatter={(value: number) => `${value}회`}
+                              style={{ fill: '#000', fontSize: 16, fontWeight: 700 }}
+                            />
                           </Bar>
                         </BarChart>
                       </ResponsiveContainer>
@@ -339,61 +424,114 @@ const MyInsight = () => {
                   </section>
 
                   {/* Deep Conversations */}
-                  <section id="conversations" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">
-                    <div className="flex items-center gap-3 text-foreground font-black text-xl tracking-tight">
-                      <MessageSquare className="w-5 h-5 text-primary" />
-                      <h3>깊이 탐구한 대화</h3>
+                  <section id="conversations" className="space-y-8 scroll-mt-24 pt-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3 text-black font-medium text-xl tracking-tight">
+                        <MessageSquare className="w-5 h-5 text-primary" />
+                        <h3>깊이 탐구한 대화</h3>
+                      </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl">
-                      {insight?.deepConversations?.map((conv, idx) => (
+                    <div className="bg-white border border-border shadow-sm rounded-[32px] divide-y divide-border/50 max-w-2xl overflow-hidden">
+                      {displayInsight?.deepConversations?.slice(0, 5).map((conv, idx) => (
                         <button
                           key={idx}
-                          onClick={() => navigate(`/?session=${conv.conversationId}`)}
-                          className="w-full flex items-center justify-between p-6 bg-secondary/[0.25] hover:bg-secondary/[0.45] rounded-[24px] transition-all border border-transparent hover:border-border/60 group shadow-sm active:scale-[0.98]"
+                          onClick={() => !isExample && navigate(`/?session=${conv.conversationId}`)}
+                          className={cn(
+                            "w-full flex items-center gap-6 p-6 hover:bg-secondary/[0.25] transition-all group text-left",
+                            isExample && "cursor-default"
+                          )}
                         >
-                          <span className="text-[16px] font-bold text-foreground/90 text-left line-clamp-1 flex-1 pr-4">{conv.title}</span>
-                          <div className="w-10 h-10 rounded-2xl bg-background flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all transform group-hover:translate-x-1 group-hover:-translate-y-1">
-                            <ArrowUpRight className="w-5 h-5" />
+                          <span className="text-2xl font-black text-primary/20 group-hover:text-primary/40 transition-colors w-6 text-center">
+                            {idx + 1}
+                          </span>
+                          <span className="text-[16px] font-bold text-black line-clamp-1 flex-1 group-hover:underline underline-offset-4">{conv.title}</span>
+                          <div className="flex items-center gap-4">
+                            <span className="text-[16px] font-bold text-black">{(conv as any).count || 0}회</span>
+                            {!isExample && (
+                              <div className="w-8 h-8 rounded-full bg-secondary/50 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all transform group-hover:translate-x-1">
+                                <ArrowUpRight className="w-4 h-4" />
+                              </div>
+                            )}
                           </div>
                         </button>
                       )) || (
-                        <div className="col-span-full py-20 text-center text-muted-foreground text-base font-medium italic bg-secondary/5 rounded-[40px] border-2 border-dashed border-border/30">
+                        <div className="py-20 text-center text-muted-foreground text-base font-medium italic">
                           아직 기록된 깊은 대화가 없습니다.
                         </div>
                       )}
                     </div>
                   </section>
 
-                  {/* Personality Spectrum */}
-                  <section id="spectrum" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">
-                    <div className="flex items-center gap-3 text-foreground font-black text-xl tracking-tight">
-                      <LayoutDashboard className="w-5 h-5 text-primary" />
-                      <h3>탐구 성향 분석</h3>
+                  {/* Personality Spectrum (Radar Chart) */}
+                  <section id="spectrum" className="space-y-8 scroll-mt-24 pt-4">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3 text-black font-medium text-xl tracking-tight">
+                        <LayoutDashboard className="w-5 h-5 text-primary" />
+                        <h3>탐구 성향 분석</h3>
+                      </div>
                     </div>
                     
-                    <div className="bg-white border border-border shadow-sm rounded-[40px] p-8 lg:p-12 max-w-2xl group">
-                      {renderSpectrumBar(
-                        "탐구의 목적", 
-                        insight?.spectrums.whyVsHow || 50, 
-                        "방법(How)", 
-                        "이유(Why)", 
-                        insight?.spectrumChanges.whyVsHow || null
-                      )}
-                      {renderSpectrumBar(
-                        "사고의 방식", 
-                        insight?.spectrums.emotionVsLogic || 50, 
-                        "논리(Logic)", 
-                        "감성(Emotion)", 
-                        insight?.spectrumChanges.emotionVsLogic || null
-                      )}
-                      {renderSpectrumBar(
-                        "몰입의 지점", 
-                        insight?.spectrums.processVsResult || 50, 
-                        "결과(Result)", 
-                        "과정(Process)", 
-                        insight?.spectrumChanges.processVsResult || null
-                      )}
+                    <div className="bg-white border border-border shadow-sm rounded-[40px] p-4 sm:p-8 lg:p-12 max-w-2xl group relative overflow-hidden">
+                      <div className="h-[320px] sm:h-[380px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                            <PolarGrid stroke="rgba(0,0,0,0.08)" />
+                            <PolarAngleAxis 
+                              dataKey="subject" 
+                              tick={{ fill: '#000', fontSize: 13, fontWeight: 500 }}
+                            />
+                            <PolarRadiusAxis 
+                              angle={90} 
+                              domain={[0, 100]} 
+                              tick={false} 
+                              axisLine={false} 
+                            />
+                            <Radar
+                              name="Status"
+                              dataKey="value"
+                              stroke="var(--primary)"
+                              fill="var(--primary)"
+                              fillOpacity={0.25}
+                              strokeWidth={3}
+                              dot={{ r: 5, fill: '#fff', stroke: 'var(--primary)', strokeWidth: 2 }}
+                              isAnimationActive={false}
+                            />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[
+                          { label: "WHY 집중도", value: displayInsight?.spectrums.whyVsHow || 0, tip: "왜(Why)라는 질문을 얼마나 자주 탐구하는지를 나타냅니다" },
+                          { label: "논리적 사고", value: 100 - (displayInsight?.spectrums.emotionVsLogic || 50), tip: "감성보다 논리적 근거를 중심으로 사고하는 정도입니다" },
+                          { label: "과정 지향성", value: displayInsight?.spectrums.processVsResult || 0, tip: "결과보다 탐구하는 과정 자체를 중시하는 성향입니다" }
+                        ].map((stat, i) => (
+                          <div key={i} className="bg-secondary/20 rounded-2xl p-4 space-y-3 relative group/tooltip">
+                             <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] font-bold text-black uppercase tracking-widest">{stat.label}</span>
+                                <Info className="w-3 h-3 text-black/50" />
+                              </div>
+                              <span className="text-[22px] font-black text-black tracking-tighter">{stat.value}%</span>
+                            </div>
+
+                            {/* Tooltip */}
+                            <div className="absolute bottom-full mb-2 left-4 opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                              <div className="bg-foreground text-white text-[13px] leading-relaxed rounded-xl px-3 py-2 w-48 shadow-xl border border-white/10">
+                                {stat.tip}
+                              </div>
+                            </div>
+
+                            <div className="h-[4px] w-full bg-black/5 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-primary rounded-full transition-all duration-1000"
+                                style={{ width: `${stat.value}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </section>
                 </div>

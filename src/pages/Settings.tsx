@@ -41,6 +41,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MobileSidebar } from "@/components/MobileSidebar";
 import { useChatStorage } from "@/hooks/useChatStorage";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SubPageNav } from "@/components/SubPageNav";
 
 declare global {
   interface Window {
@@ -72,6 +73,7 @@ const Settings = () => {
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("account");
   
   const { shortTermUsage, longTermUsage, isLoading: usageLoading, checkUsage } = useUsageLimit();
   const {
@@ -114,6 +116,33 @@ const Settings = () => {
 
     fetchData();
   }, [user, authLoading, navigate]);
+
+  // Scroll tracking for mobile nav
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -70% 0px',
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    const sectionIds = ['account', 'subscription', 'billing', 'settings', 'legal', 'support'];
+    
+    sectionIds.forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, [loading]);
 
   useEffect(() => {
     setIsSidebarCollapsed(isMobile);
@@ -368,16 +397,29 @@ const Settings = () => {
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h1 className="font-bold text-base">설정</h1>
+              <h1 className="font-medium text-base text-black">설정</h1>
             </div>
-            <button 
-              onClick={() => navigate("/")}
-              className="p-2 hover:bg-secondary rounded-full transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => navigate("/")}
+                className="p-2 hover:bg-secondary rounded-full transition-colors"
+                aria-label="메인으로 가기"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </header>
+
+        {/* Mobile Sub-Navigation */}
+        {isMobile && (
+          <SubPageNav 
+            items={sections}
+            activeId={activeSection}
+            onItemClick={scrollToSection}
+            className="sm:hidden"
+          />
+        )}
 
         <main className="flex-1 overflow-y-auto custom-scrollbar">
           <div className="max-w-[1200px] mx-auto px-4 sm:px-8 lg:px-12 py-8 lg:py-16">
@@ -386,13 +428,13 @@ const Settings = () => {
               {/* Left Section Navigation */}
               <aside className="hidden lg:block w-48 shrink-0">
                 <div className="sticky top-12 space-y-8">
-                  <h2 className="text-2xl font-black text-foreground/90 px-3 tracking-tight">Settings</h2>
+                  <h2 className="text-2xl font-bold text-black px-3 tracking-tight">Settings</h2>
                   <nav className="space-y-1">
                     {sections.map((section) => (
                       <button
                         key={section.id}
                         onClick={() => scrollToSection(section.id)}
-                        className="w-full text-left px-3 py-2.5 rounded-xl text-[15px] font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-[15px] font-medium text-black hover:bg-secondary transition-all"
                       >
                         {section.label}
                       </button>
@@ -407,8 +449,8 @@ const Settings = () => {
                 {/* 1. Account Info */}
                 <section id="account" className="space-y-6 scroll-mt-24">
                   <div className="space-y-1">
-                    <h3 className="text-xl font-black text-foreground tracking-tight">계정 정보</h3>
-                    <p className="text-sm font-medium text-muted-foreground">로그인된 계정 정보와 보안 설정을 관리하세요.</p>
+                    <h3 className="text-xl font-medium text-black tracking-tight">계정 정보</h3>
+                    <p className="text-sm font-medium text-black/60">로그인된 계정 정보와 보안 설정을 관리하세요.</p>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-4 max-w-2xl">
@@ -417,8 +459,8 @@ const Settings = () => {
                         <User className="w-7 h-7 text-primary" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[11px] font-black text-muted-foreground uppercase tracking-widest">이메일 계정</p>
-                        <p className="text-xl font-bold text-foreground">{user?.email}</p>
+                        <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest">이메일 계정</p>
+                        <p className="text-xl font-bold text-black">{user?.email}</p>
                       </div>
                     </div>
 
@@ -429,12 +471,12 @@ const Settings = () => {
                 <section id="subscription" className="space-y-6 scroll-mt-24 pt-16 border-t border-border">
                   <div className="flex items-center justify-between gap-6 flex-wrap">
                     <div className="space-y-1">
-                      <h3 className="text-xl font-black text-foreground tracking-tight">Usage limits</h3>
-                      <p className="text-sm font-medium text-muted-foreground">현재 플랜의 대화 가능 횟수와 초기화 시간을 관리하세요.</p>
+                      <h3 className="text-xl font-medium text-black tracking-tight">Usage limits</h3>
+                      <p className="text-sm font-medium text-black/60">현재 플랜의 대화 가능 횟수와 초기화 시간을 관리하세요.</p>
                     </div>
                     <span className={cn(
-                      "px-5 py-2 rounded-full text-[13px] font-black uppercase tracking-widest shadow-sm",
-                      isPro ? "bg-primary text-white" : "bg-black/5 text-muted-foreground"
+                      "px-5 py-2 rounded-full text-[13px] font-bold uppercase tracking-widest shadow-sm",
+                      isPro ? "bg-primary text-white" : "bg-black/5 text-black/40"
                     )}>
                       {isPro ? "PRO Member" : "Free Plan"}
                     </span>
@@ -450,13 +492,13 @@ const Settings = () => {
                       <div className="space-y-4">
                         <div className="flex justify-between items-center group">
                           <div className="space-y-1">
-                            <p className="text-sm font-black text-foreground/70 uppercase tracking-widest">Current limits</p>
-                            <p className="text-xs text-muted-foreground font-medium">Starts when a message is sent</p>
+                            <p className="text-sm font-bold text-black uppercase tracking-widest">Current limits</p>
+                            <p className="text-xs text-black/50 font-medium">Starts when a message is sent</p>
                           </div>
                           <span className="text-sm font-bold text-primary">{getUsagePercent(shortTermUsage)}% USED</span>
                         </div>
                         <Progress value={getUsagePercent(shortTermUsage)} className="h-2.5 bg-primary/10" />
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
+                        <p className="text-xs font-bold text-black/40 uppercase tracking-tight">
                           {isPro ? "WEEKLY LIMIT (50 SESSIONS)" : "DAILY LIMIT (5 SESSIONS)"}
                         </p>
                       </div>
@@ -465,21 +507,21 @@ const Settings = () => {
                       <div className="space-y-4">
                         <div className="flex justify-between items-center group">
                           <div className="space-y-1">
-                            <p className="text-sm font-black text-foreground/70 uppercase tracking-widest">{isPro ? "Monthly limits" : "Weekly limits"}</p>
-                            <p className="text-xs text-muted-foreground font-medium uppercase">Resets {formatResetDate(longTermUsage?.resetAt)}</p>
+                            <p className="text-sm font-bold text-black uppercase tracking-widest">{isPro ? "Monthly limits" : "Weekly limits"}</p>
+                            <p className="text-xs text-black/50 font-medium uppercase">Resets {formatResetDate(longTermUsage?.resetAt)}</p>
                           </div>
                           <span className="text-sm font-bold text-primary">{getUsagePercent(longTermUsage)}% USED</span>
                         </div>
                         <Progress value={getUsagePercent(longTermUsage)} className="h-2.5 bg-primary/10" />
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
+                        <p className="text-xs font-bold text-black/40 uppercase tracking-tight">
                           {isPro ? "MONTHLY LIMIT (200 SESSIONS)" : "WEEKLY LIMIT (20 SESSIONS)"}
                         </p>
                       </div>
 
                       {isPro ? (
-                        <div className="p-6 bg-white/40 backdrop-blur-sm rounded-[24px] border border-primary/10">
-                          <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-1">다음 결제 예정일</p>
-                          <p className="text-xl font-bold text-foreground">
+                        <div className="p-6 bg-secondary/5 border border-primary/10 rounded-[24px]">
+                          <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-1">다음 결제 예정일</p>
+                          <p className="text-xl font-bold text-black">
                             {subscription?.nextScheduledAt ? subscription.nextScheduledAt.toDate().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' }) : "-"}
                           </p>
                         </div>
@@ -499,7 +541,7 @@ const Settings = () => {
                 {/* 3. Billing & Payments */}
                 <section id="billing" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">
                   <div className="space-y-8 max-w-2xl">
-                    <div className="flex items-center gap-4 text-foreground font-black text-xl tracking-tight">
+                    <div className="flex items-center gap-4 text-black font-medium text-xl tracking-tight">
                       <CreditCard className="w-6 h-6 text-primary" />
                       <h3>결제 수단</h3>
                     </div>
@@ -514,13 +556,13 @@ const Settings = () => {
                         <div className="space-y-1">
                           {subscription?.cardLast4 ? (
                             <>
-                              <p className="text-lg font-bold text-foreground">
+                              <p className="text-lg font-bold text-black">
                                 {subscription.cardBrand} •••• {subscription.cardLast4}
                               </p>
-                              <p className="text-xs font-black text-primary/60 uppercase tracking-widest">정기 결제 수단</p>
+                              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">정기 결제 수단</p>
                             </>
                           ) : (
-                            <p className="text-base font-bold text-muted-foreground">등록된 결제 수단이 없습니다</p>
+                            <p className="text-base font-bold text-black/40">등록된 결제 수단이 없습니다</p>
                           )}
                         </div>
                       </div>
@@ -528,7 +570,7 @@ const Settings = () => {
                         <Button 
                           onClick={handleUpdateCard} 
                           variant="outline" 
-                          className="rounded-2xl h-11 px-6 font-black text-xs border-border/80 hover:bg-white hover:shadow-md transition-all uppercase tracking-widest"
+                          className="rounded-2xl h-10 px-6 font-bold text-[11px] border-border/80 hover:bg-white hover:shadow-md transition-all uppercase tracking-widest text-black/60"
                         >
                           수정
                         </Button>
@@ -537,7 +579,7 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="flex items-center gap-4 text-foreground font-black text-xl tracking-tight">
+                    <div className="flex items-center gap-4 text-black font-medium text-xl tracking-tight">
                       <History className="w-6 h-6 text-primary" />
                       <h3>결제 내역</h3>
                     </div>
@@ -545,25 +587,25 @@ const Settings = () => {
                     <div className="bg-white border border-border/50 rounded-[32px] overflow-hidden shadow-sm">
                       <div className="overflow-x-auto">
                         <table className="w-full text-[15px] text-left">
-                          <thead className="text-[11px] text-muted-foreground font-black uppercase tracking-[0.15em] bg-secondary/5 border-b border-border/30">
+                          <thead className="text-[11px] text-black/40 font-bold uppercase tracking-[0.15em] bg-secondary/5 border-b border-border/30">
                             <tr>
-                              <th className="px-8 py-6">Date</th>
-                              <th className="px-8 py-6">Amount</th>
-                              <th className="px-8 py-6 text-right">Status</th>
+                              <th className="px-8 py-5">Date</th>
+                              <th className="px-8 py-5">Amount</th>
+                              <th className="px-8 py-5 text-right">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/20">
                             {payments.length > 0 ? (
                               payments.map((payment) => (
-                                <tr key={payment.paymentId} className="hover:bg-secondary/5 transition-colors group">
-                                  <td className="px-8 py-6 font-bold text-foreground">
+                                <tr key={payment.paymentId} className="hover:bg-secondary/2 transition-colors group">
+                                  <td className="px-8 py-5 font-bold text-black">
                                     {payment.paidAt?.toDate().toLocaleDateString('ko-KR')}
                                   </td>
-                                  <td className="px-8 py-6 text-muted-foreground font-medium">
+                                  <td className="px-8 py-5 text-black/60 font-medium">
                                     ₩{payment.amount.toLocaleString()}
                                   </td>
-                                  <td className="px-8 py-6 text-right">
-                                    <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 text-[10px] font-black uppercase tracking-widest">
+                                  <td className="px-8 py-5 text-right">
+                                    <span className="px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 text-[10px] font-bold uppercase tracking-widest">
                                       {payment.status}
                                     </span>
                                   </td>
@@ -597,15 +639,15 @@ const Settings = () => {
                 {/* 4. General Settings */}
                 <section id="settings" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">
                   <div className="space-y-6 max-w-2xl">
-                    <div className="flex items-center gap-4 text-foreground font-black text-xl tracking-tight">
+                    <div className="flex items-center gap-4 text-black font-medium text-xl tracking-tight">
                       <Bell className="w-6 h-6 text-primary" />
                       <h3>알림 설정</h3>
                     </div>
                     
                     <div className="bg-white border border-border shadow-sm rounded-[32px] p-8 flex items-center justify-between">
-                      <div className="space-y-2">
-                        <p className="text-[16px] font-bold text-foreground">인사이트 준비 완료 알림</p>
-                        <p className="text-sm font-medium text-muted-foreground leading-relaxed">새로운 AI 분석 결과가 도착하면 화면 상단에 알림을 표시합니다.</p>
+                      <div className="space-y-1">
+                        <p className="text-[16px] font-bold text-black">인사이트 준비 완료 알림</p>
+                        <p className="text-sm font-medium text-black/60 leading-relaxed">새로운 AI 분석 결과가 도착하면 화면 상단에 알림을 표시합니다.</p>
                       </div>
                       <Switch 
                         className="data-[state=checked]:bg-primary"
@@ -618,7 +660,7 @@ const Settings = () => {
 
                 {/* 5. Legal */}
                 <section id="legal" className="space-y-6 scroll-mt-24 pt-16 border-t border-border">
-                  <div className="flex items-center gap-4 text-foreground font-black text-xl tracking-tight">
+                  <div className="flex items-center gap-4 text-black font-medium text-xl tracking-tight">
                     <ShieldCheck className="w-6 h-6 text-primary" />
                     <h3>법적 고지</h3>
                   </div>
@@ -642,7 +684,7 @@ const Settings = () => {
                 {/* 6. Account Support */}
                 <section id="support" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">
                   <div className="space-y-6 max-w-2xl">
-                    <div className="flex items-center gap-4 text-foreground font-black text-xl tracking-tight">
+                    <div className="flex items-center gap-4 text-black font-medium text-xl tracking-tight">
                       <ShieldAlert className="w-6 h-6 text-primary" />
                       <h3>계정 관리</h3>
                     </div>
@@ -654,10 +696,10 @@ const Settings = () => {
                         className="w-full h-16 rounded-[24px] justify-between px-8 bg-secondary/10 hover:bg-secondary/30 transition-all group"
                       >
                         <div className="flex items-center gap-4">
-                          <LogOut className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
-                          <span className="font-bold text-foreground">로그아웃</span>
+                          <LogOut className="w-5 h-5 text-black/40 group-hover:text-black" />
+                          <span className="font-bold text-black">로그아웃</span>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
+                        <ChevronRight className="w-5 h-5 text-black/20" />
                       </Button>
 
                       <div className="pt-2">
@@ -671,10 +713,10 @@ const Settings = () => {
                             <UserX className="w-5 h-5" />
                             <span className="font-bold">회원 탈퇴</span>
                           </div>
-                          <ChevronRight className="w-5 h-5 text-destructive/30" />
+                          <ChevronRight className="w-5 h-5 text-destructive/20" />
                         </Button>
                         {isPro && (
-                          <p className="text-[13px] text-muted-foreground font-medium px-8 mt-4 leading-relaxed bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50">
+                          <p className="text-[13px] text-black/40 font-medium px-8 mt-4 leading-relaxed bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50">
                             구독이 활성화된 상태에서는 탈퇴할 수 없습니다. <br />
                             먼저 구독을 해지한 후 다시 시도해 주세요.
                           </p>

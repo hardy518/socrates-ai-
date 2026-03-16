@@ -30,6 +30,7 @@ export interface CategoryStat {
 export interface DeepConversation {
   title: string;
   conversationId: string;
+  count?: number;
 }
 
 export interface Insight {
