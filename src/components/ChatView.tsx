@@ -9,8 +9,9 @@ import { GrowthGauge } from "./GrowthGauge";
 import { generateAIResponse, generateFinalAnswer } from "@/lib/claude";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { CopyButton } from "./ui/CopyButton";
-import { getUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatViewProps {
@@ -22,9 +23,10 @@ interface ChatViewProps {
   onResolve: () => void;
   isInitialLoading?: boolean;
   onMenuClick?: () => void;
+  onFeedback: (messageId: string, feedback: 'like' | 'dislike') => void;
 }
 
-export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, isInitialLoading, onMenuClick }: ChatViewProps) {
+export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, isInitialLoading, onMenuClick, onFeedback }: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,8 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
   const [showEarlyComplete, setShowEarlyComplete] = useState(false);
   const [isEditingProblem, setIsEditingProblem] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { t } = useLanguage();
 
 
   const handleCopyAll = async () => {
@@ -79,9 +83,16 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
   const isComplete = showEarlyComplete || session.currentStep >= session.depth;
   const canViewAnswer = isComplete && !session.isResolved;
 
-  // 마지막 메시지가 [VERIFICATION_NEEDED]를 포함하는지 확인
   const lastMessage = session.messages[session.messages.length - 1];
   const needsVerification = lastMessage?.role === 'assistant' && lastMessage.content.includes('[VERIFICATION_NEEDED]');
+
+  // Quick Replies 조건
+  const assistantCount = session.messages.filter(m => m.role === 'assistant').length;
+  const showQuickReplies = assistantCount >= 5 && 
+                          lastMessage?.role === 'assistant' && 
+                          !isLoading && 
+                          !showAnswer && 
+                          !session.isResolved;
 
   // 로컬스토리지에서 정답 상태 복원
   useEffect(() => {
@@ -180,15 +191,16 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
     }
   };
 
+
   return (
     <div
       ref={scrollRef}
       className="flex-1 w-full h-full overflow-y-auto overflow-x-hidden scrollbar-auto bg-background"
     >
-      <div className="max-w-4xl mx-auto w-full py-2 sm:py-4 px-4 relative min-h-full flex flex-col">
+      <div className="max-w-4xl mx-auto w-full relative min-h-full flex flex-col">
         {/* ===== 1. 헤더 영역 (제목 + 게이지 + 문제/시도/목표) ===== */}
-        <div className="sticky top-0 z-20 bg-background pt-2 pb-3 -mx-4 px-4 mb-2">
-          <div className="bg-background/95 backdrop-blur-sm border border-border rounded-xl shadow-sm overflow-hidden">
+        <div className="sticky top-0 z-20 bg-background pt-2 sm:pt-4 pb-3 mb-2 px-4 sm:px-6">
+          <div className="bg-background/95 backdrop-blur-sm border border-black/10 rounded-xl shadow-sm overflow-hidden">
             <div className="px-4 sm:px-6 py-3 space-y-3">
               {/* Row 1: Category & Title & Gauge */}
               <div className="flex items-start justify-between gap-2 sm:gap-4">
@@ -216,8 +228,8 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
-                  <div className="flex items-center gap-1 mr-2 px-1 border-r border-border/50">
+                <div className="flex items-center pt-1">
+                  <div className="flex items-center gap-1 px-1">
                     <button
                       onClick={handleCopyAll}
                       className="p-1.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all"
@@ -233,11 +245,10 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                       <Share2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <GrowthGauge current={Math.min(session.currentStep, session.depth)} total={session.depth} />
                 </div>
               </div>
 
-              <div className="h-px bg-border/50" />
+              <div className="h-px bg-black/5" />
 
               {/* Row 2: Problem & Approach */}
               <div className="space-y-1 text-sm text-muted-foreground">
@@ -267,8 +278,32 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
           )}
 
           {session.messages.map((msg, index) => (
-            <ChatMessage key={msg.id} message={msg} isDirectMode={false} isLast={index === session.messages.length - 1} />
+            <ChatMessage 
+              key={msg.id} 
+              message={msg} 
+              isDirectMode={false} 
+              isLast={index === session.messages.length - 1} 
+              onFeedback={(f) => onFeedback(msg.id, f)}
+            />
           ))}
+
+          {/* Quick Replies */}
+          {showQuickReplies && (
+            <div className="flex flex-row gap-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <button
+                onClick={handleViewAnswer}
+                className="rounded-full px-4 py-2 text-sm border border-black/10 transition-all hover:bg-secondary active:scale-95 bg-background font-medium"
+              >
+                {t('viewAnswer')}
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="rounded-full px-4 py-2 text-sm border border-black/10 transition-all hover:bg-secondary active:scale-95 bg-background font-medium"
+              >
+                {t('newSession')}
+              </button>
+            </div>
+          )}
 
           {isLoading && (
             <div className="flex justify-start">
@@ -384,12 +419,20 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
                     )}
 
                     {isComplete && !showEarlyComplete && !needsVerification && (
-                      <div className="flex flex-col gap-3 py-4 items-center bg-background/95 backdrop-blur-sm rounded-xl">
+                      <div className="flex flex-col gap-4 py-6 px-4 items-center bg-background/95 backdrop-blur-sm border border-black/10 rounded-2xl shadow-lg mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <span className="material-icons text-xl text-primary">chat_bubble_outline</span>
+                        </div>
+                        <div className="text-center space-y-2">
+                          <p className="font-semibold text-foreground">
+                            {t('depthLimitReached')}
+                          </p>
+                        </div>
                         <button
                           onClick={handleViewAnswer}
-                          className="w-full py-3.5 px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] text-base"
+                          className="w-full max-w-sm py-3 px-6 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-all shadow-md active:scale-[0.98] text-base"
                         >
-                          정답을 확인해 보세요
+                          {t('viewAnswer')}
                         </button>
                       </div>
                     )}

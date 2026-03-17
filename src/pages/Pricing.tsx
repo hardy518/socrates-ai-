@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { checkIsPro } from "@/utils/subscription";
 import { toast } from "sonner";
 import { setProPlan } from "@/utils/subscription";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 declare global {
     interface Window {
@@ -13,6 +14,7 @@ declare global {
 
 const Pricing = () => {
     const { user, signInWithGoogle } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const [isPro, setIsPro] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -20,11 +22,9 @@ const Pricing = () => {
 
     useEffect(() => {
         const fetchSubscription = async () => {
-            console.log("Fetching subscription for user:", user?.uid, "Anonymous:", user?.isAnonymous);
             if (user && !user.isAnonymous) {
                 try {
                     const proStatus = await checkIsPro(user.uid);
-                    console.log("Pro status:", proStatus);
                     setIsPro(proStatus);
                 } catch (error) {
                     console.error("Error checking pro status:", error);
@@ -46,54 +46,40 @@ const Pricing = () => {
     }, [loading, searchParams]);
 
     const handleBasicPlan = async () => {
-        console.log("handleBasicPlan clicked. User:", user?.uid, "isPro:", isPro);
         if (!user || user.isAnonymous) {
             try {
-                console.log("Triggering Google Login");
                 await signInWithGoogle();
                 setTimeout(() => navigate("/"), 500);
             } catch (error) {
                 console.error("Login failed:", error);
-                toast.error("로그인에 실패했습니다. 다시 시도해 주세요.");
+                toast.error(t('loginFailed'));
             }
             return;
         }
 
-        if (isPro) {
-            console.log("User is Pro, navigating to /");
-            setTimeout(() => navigate("/"), 500);
-        } else {
-            console.log("User is Free, navigating to /");
-            setTimeout(() => navigate("/"), 500);
-        }
+        setTimeout(() => navigate("/"), 500);
     };
 
     const handleProPlan = async () => {
-        console.log("handleProPlan clicked. User:", user?.uid, "isPro:", isPro);
         if (!user || user.isAnonymous) {
             try {
-                console.log("Triggering Google Login for Pro");
                 await signInWithGoogle();
-                // 로그인 후 /pricing으로 돌아오도록 유도하거나, 
-                // 간단히 홈으로 보낸 뒤 다시 들어오게 함 (요청대로 / 이동)
                 setTimeout(() => navigate("/"), 500);
             } catch (error) {
                 console.error("Login failed:", error);
-                toast.error("로그인에 실패했습니다.");
+                toast.error(t('loginFailed'));
             }
             return;
         }
 
         if (isPro) {
-            toast.info("이미 Pro 플랜 사용 중입니다.");
+            toast.info(t('alreadyPro'));
             setTimeout(() => navigate("/"), 500);
             return;
         }
 
         try {
             const customerId = user.uid;
-
-            // 모바일 기기 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const redirectUrl = `${window.location.origin}/payment-success`;
 
@@ -102,7 +88,7 @@ const Pricing = () => {
                 channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
                 issueId: crypto.randomUUID(),
                 billingKeyMethod: "CARD",
-                issueName: "소크라테스 AI Pro 정기구독",
+                issueName: t('paymentNamePro'),
                 offerPeriod: {
                     interval: "1m",
                 },
@@ -115,18 +101,14 @@ const Pricing = () => {
                 },
             });
 
-            // 리다이렉트 방식인 경우(모바일) response가 undefined일 수 있음
             if (isMobile) return;
 
             if (response.code !== undefined) {
-                // Error occurred
-                toast.error(`결제 준비 중 오류가 발생했습니다: ${response.message}`);
+                toast.error(t('paymentPrepError').replace('{message}', response.message));
                 return;
             }
 
             const { billingKey } = response;
-
-            // Call backend to process initial payment and save billing key
             const API_BASE_URL = import.meta.env.VITE_API_URL || '';
             const subscribeResponse = await fetch(`${API_BASE_URL}/.netlify/functions/subscribe`, {
                 method: 'POST',
@@ -136,7 +118,7 @@ const Pricing = () => {
                 body: JSON.stringify({
                     userId: user.uid,
                     billingKey: billingKey,
-                    userName: user.displayName || "소크라테스 AI 사용자",
+                    userName: user.displayName || t('anonymousUser'),
                     userEmail: user.email || "",
                     userPhone: "010-0000-0000",
                 }),
@@ -145,15 +127,15 @@ const Pricing = () => {
             const result = await subscribeResponse.json();
 
             if (subscribeResponse.ok) {
-                toast.success("구독이 시작되었습니다! 이제 Pro 기능을 이용하실 수 있습니다.");
+                toast.success(t('subscriptionStarted'));
                 setIsPro(true);
                 setTimeout(() => navigate("/"), 2000);
             } else {
-                toast.error(result.message || "구독 처리 중 오류가 발생했습니다.");
+                toast.error(t('subscriptionError').replace('{message}', result.message));
             }
         } catch (error) {
             console.error("Payment issuance failed:", error);
-            toast.error("결제 요청 중 예기치 못한 오류가 발생했습니다.");
+            toast.error(t('unexpectedPaymentError'));
         }
     };
 
@@ -182,7 +164,7 @@ const Pricing = () => {
                 {/* Hero Section */}
                 <div className="text-center mb-10">
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
-                        당신의 생각을 더 깊게
+                        {t('pricingHero')}
                     </h1>
                 </div>
 
@@ -192,16 +174,16 @@ const Pricing = () => {
                     {/* Starter Plan — hidden if already Pro */}
                     {!isPro && (
                         <div className="flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                            <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">무료</div>
+                            <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">{t('freePlanTitle')}</div>
                             <div className="mb-2">
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-4xl font-black text-slate-900 dark:text-white">₩0</span>
                                     <span className="text-slate-500 text-sm font-medium">/월</span>
                                 </div>
-                                <p className="text-slate-500 text-sm mt-1">먼저 경험해보세요</p>
+                                <p className="text-slate-500 text-sm mt-1">{t('freePlanDesc')}</p>
                             </div>
                             <ul className="space-y-3 my-6 flex-1">
-                                {["하루 5회 대화", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                                {[t('freePlanLimit'), t('socraticQuestions'), t('permanentStorage'), t('searchPastChats')].map((item, i) => (
                                     <li key={i} className="flex items-center gap-3 text-slate-500 text-sm">
                                         <span className="material-icons text-primary text-base">check_circle</span>
                                         {item}
@@ -212,7 +194,7 @@ const Pricing = () => {
                                 onClick={handleBasicPlan}
                                 className="w-full py-3 rounded-xl bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
                             >
-                                무료로 시작하기
+                                {t('startFree')}
                             </button>
                         </div>
                     )}
@@ -221,23 +203,23 @@ const Pricing = () => {
                     <div className={`flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900 border-2 border-primary flex flex-col relative shadow-[0_24px_48px_-8px_rgba(66,133,244,0.18)]`}>
                         {isPro ? (
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg shadow-primary/40">
-                                현재 사용 중
+                                {t('currentlyUsing')}
                             </div>
                         ) : (
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 text-xs font-bold rounded-full">
-                                추천
+                                {t('recommended')}
                             </div>
                         )}
                         <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4 self-start">Pro</div>
                         <div className="mb-2">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-black text-slate-900 dark:text-white">₩7,000</span>
+                                <span className="text-4xl font-black text-slate-900 dark:text-white">₩7,500</span>
                                 <span className="text-slate-500 text-sm font-medium">/월</span>
                             </div>
-                            <p className="text-slate-500 text-sm mt-1">더 깊이 생각하고 싶을 때</p>
+                            <p className="text-slate-500 text-sm mt-1">{t('proPlanDesc')}</p>
                         </div>
                         <ul className="space-y-3 my-6 flex-1">
-                            {["충분한 대화 제공", "단계별 소크라테스 질문", "대화 영구 저장", "과거 대화 검색"].map((item, i) => (
+                            {[t('sufficientUsage'), t('socraticQuestions'), t('permanentStorage'), t('searchPastChats')].map((item, i) => (
                                 <li key={i} className="flex items-center gap-3 text-slate-800 dark:text-slate-200 text-sm font-semibold">
                                     <span className="material-icons text-primary text-base">check_circle</span>
                                     {item}
@@ -249,22 +231,22 @@ const Pricing = () => {
                             disabled={isPro}
                             className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
-                            {isPro ? "구독 중" : "Pro로 시작하기"}
+                            {isPro ? t('subscribed') : t('startPro')}
                         </button>
                     </div>
 
                     {/* Enterprise Plan */}
                     <div className="flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 flex flex-col hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                        <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">기관/기업</div>
+                        <div className="inline-block px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold mb-4">{t('enterprisePlanTitle')}</div>
                         <div className="mb-2">
                             <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-black text-slate-900 dark:text-white">₩7,000</span>
-                                <span className="text-slate-500 text-sm font-medium">/ 1인 · 월</span>
+                                <span className="text-2xl font-black text-slate-900 dark:text-white">₩7,500</span>
+                                <span className="text-slate-500 text-sm font-medium">{t('perPersonMonth')}</span>
                             </div>
-                            <p className="text-slate-500 text-sm mt-1">조직을 위한 맞춤 솔루션</p>
+                            <p className="text-slate-500 text-sm mt-1">{t('enterprisePlanDesc')}</p>
                         </div>
                         <ul className="space-y-3 my-6 flex-1">
-                            {["Pro보다 더 많은 사용량", "Pro의 모든 기능", "관리자 대시보드", "조직 멤버 관리", "데이터 내보내기", "전담 지원"].map((item, i) => (
+                            {[t('moreUsageThanPro'), t('allProFeatures'), t('adminDashboard'), t('orgMemberManagement'), t('dataExport'), t('dedicatedSupport')].map((item, i) => (
                                 <li key={i} className="flex items-center gap-3 text-slate-500 text-sm">
                                     <span className="material-icons text-primary text-base">check_circle</span>
                                     {item}
@@ -274,7 +256,7 @@ const Pricing = () => {
                         <button
                             onClick={() => window.open('https://socratestutor.channel.io', '_blank')}
                             className="w-full py-3 rounded-xl bg-white dark:bg-transparent border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm">
-                            도입 문의하기
+                            {t('inquireNow')}
                         </button>
                     </div>
                 </div>
@@ -282,7 +264,7 @@ const Pricing = () => {
                 {/* VAT Notice */}
                 <div className="max-w-2xl mx-auto text-center border-t border-slate-200 dark:border-slate-800 pt-8">
                     <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
-                        표시된 가격에는 부가세가 포함되어 있습니다.
+                        {t('vatIncluded')}
                     </p>
                 </div>
             </main>

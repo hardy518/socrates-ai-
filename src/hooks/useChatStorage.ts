@@ -94,6 +94,7 @@ export function useChatStorage() {
       currentStep: 0,
       messages: [],
       isResolved: false,
+      isSummarized: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -111,13 +112,6 @@ export function useChatStorage() {
         updatedAt: serverTimestamp()
       });
 
-      if (currentCount % 5 === 0) {
-        // 백그라운드에서 분석 호출 (UI 차단 방지)
-        import('@/lib/claude').then(({ analyzeInsight }) => {
-          analyzeInsight(user.uid, currentCount).catch(console.error);
-        });
-      }
-
       const createdSession: ChatSession = {
         id: docRef.id,
         title: newSession.title,
@@ -132,7 +126,6 @@ export function useChatStorage() {
         updatedAt: Date.now(),
       };
 
-      setActiveSessionId(docRef.id);
       return createdSession;
     } catch (error) {
       console.error('세션 생성 실패:', error);
@@ -173,6 +166,25 @@ export function useChatStorage() {
         currentStep: newStep,
         updatedAt: serverTimestamp(),
       });
+
+      // 🔥 사용자 메시지일 경우 누적 메시지 수 증가 및 인사이트 분석 트리거
+      if (message.role === 'user') {
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        const currentTotalMessages = (userDoc.data()?.totalMessageCount || 0) + 1;
+
+        await updateDoc(userRef, {
+          totalMessageCount: increment(1),
+          updatedAt: serverTimestamp()
+        });
+
+        // 20회마다 인사이트 분석 실행
+        if (currentTotalMessages % 20 === 0) {
+          import('@/lib/claude').then(({ analyzeInsight }) => {
+            analyzeInsight(user.uid, currentTotalMessages).catch(console.error);
+          });
+        }
+      }
 
       return newMessage;
     } catch (error) {
@@ -233,6 +245,59 @@ export function useChatStorage() {
     }
   }, [user]);
   
+  const updateMessage = useCallback(async (sessionId: string, messageId: string, updates: Partial<Message>) => {
+    if (!user) return;
+    try {
+      const sessionRef = doc(db, 'conversations', sessionId);
+      const sessionDoc = await getDoc(sessionRef);
+      if (!sessionDoc.exists()) return;
+
+      const messages = sessionDoc.data().messages as Message[];
+      const updatedMessages = messages.map(m => 
+        m.id === messageId ? { ...m, ...updates } : m
+      );
+
+      await updateDoc(sessionRef, {
+        messages: updatedMessages,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('메시지 업데이트 실패:', error);
+    }
+  }, [user]);
+
+  const forkSession = useCallback(async (sessionId: string, messageId: string, newContent: string) => {
+    if (!user) return;
+    try {
+      const sessionRef = doc(db, 'conversations', sessionId);
+      const sessionDoc = await getDoc(sessionRef);
+      if (!sessionDoc.exists()) return;
+
+      const messages = sessionDoc.data().messages as Message[];
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) return;
+
+      // 해당 메시지까지 자르고, 해당 메시지 내용 수정
+      const truncatedMessages = messages.slice(0, messageIndex + 1);
+      truncatedMessages[messageIndex] = {
+        ...truncatedMessages[messageIndex],
+        content: newContent,
+        timestamp: Date.now()
+      };
+
+      await updateDoc(sessionRef, {
+        messages: truncatedMessages,
+        currentStep: truncatedMessages.filter(m => m.role === 'user').length,
+        isResolved: false,
+        updatedAt: serverTimestamp(),
+      });
+      
+      return truncatedMessages;
+    } catch (error) {
+      console.error('세션 포크 실패:', error);
+    }
+  }, [user]);
+
   const togglePinSession = useCallback(async (sessionId: string, isPinned: boolean) => {
     if (!user) return;
     try {
@@ -258,6 +323,8 @@ export function useChatStorage() {
     clearActiveSession,
     updateSessionTitle,
     togglePinSession,
+    updateMessage,
+    forkSession,
     isLoading,
   };
 }

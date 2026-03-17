@@ -4,6 +4,7 @@ import { Insight } from "@/types/chat";
 
 export interface UserSettings {
     conversationCount?: number;
+    totalMessageCount?: number;
     insightBadge?: boolean;
     insight?: Insight;
     insightNotification?: boolean;

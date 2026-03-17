@@ -22,6 +22,7 @@ import {
 import { RenameModal } from "./RenameModal";
 import { checkIsPro } from "@/utils/subscription";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MobileSidebarProps {
   sessions: ChatSession[];
@@ -55,6 +56,7 @@ export function MobileSidebar({
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [showInsightBadge, setShowInsightBadge] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
@@ -111,12 +113,12 @@ export function MobileSidebar({
         });
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
-          toast.error("공유에 실패했습니다.");
+          toast.error(t('shareConversation') + " " + t('failed'));
         }
       }
     } else {
       await navigator.clipboard.writeText(url);
-      toast.success("링크가 클립보드에 복사되었습니다.");
+      toast.success(t('shareLinkCopied'));
     }
   };
 
@@ -133,7 +135,7 @@ export function MobileSidebar({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="채팅 검색"
+              placeholder={t('searchChat')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white border border-gray-300 rounded-full py-2 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-black"
@@ -146,20 +148,20 @@ export function MobileSidebar({
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-black bg-black/5 hover:bg-black/10 transition-all"
             >
               <Plus className="w-5 h-5 text-black" />
-              <span>새 채팅</span>
+              <span>{t('newSession')}</span>
             </button>
           </SheetClose>
         </div>
 
         {/* Chat List - Scrollable middle part */}
         <div className="px-5 py-2 flex-shrink-0">
-          <span className="text-xs font-bold text-black/60 uppercase tracking-wider">최근 대화</span>
+          <span className="text-xs font-bold text-black/60 uppercase tracking-wider">{t('sessions')}</span>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 space-y-1">
           {filteredSessions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm italic">
-              {searchQuery ? "검색 결과가 없습니다" : "아직 대화가 없습니다"}
+              {searchQuery ? t('noSearchResults') : t('noConversations')}
             </div>
           ) : (
             filteredSessions.map((session) => (
@@ -205,33 +207,33 @@ export function MobileSidebar({
                       onClick={(e) => { e.stopPropagation(); handleShare(session); }}
                     >
                       <Share2 className="w-4 h-4" />
-                      <span>대화 공유</span>
+                      <span>{t('shareConversation')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="gap-2"
                       onClick={(e) => { e.stopPropagation(); onTogglePin(session.id, !session.isPinned); }}
                     >
                       {session.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
-                      <span>{session.isPinned ? "고정 해제" : "고정"}</span>
+                      <span>{session.isPinned ? t('unpin') : t('pin')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="gap-2"
                       onClick={(e) => { e.stopPropagation(); handleRenameStart(session.id, session.title); }}
                     >
                       <Pencil className="w-4 h-4" />
-                      <span>이름 변경</span>
+                      <span>{t('rename')}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="gap-2 text-destructive focus:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm('이 대화를 삭제하시겠습니까?')) {
+                        if (confirm(t('deleteChatConfirm'))) {
                           onDeleteSession(session.id);
                         }
                       }}
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span>삭제</span>
+                      <span>{t('delete')}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -255,7 +257,7 @@ export function MobileSidebar({
           >
             <LayoutDashboard className={cn("w-5 h-5", location.pathname === "/my-insight" ? "text-[#7C3AED]" : "text-black")} />
             <div className="flex items-center gap-2 flex-1">
-              <span className="font-semibold text-black text-sm">나의 인사이트</span>
+              <span className="font-semibold text-black text-sm">{t('myInsight')}</span>
               {showInsightBadge && (
                 <div className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" />
               )}
@@ -275,7 +277,7 @@ export function MobileSidebar({
                     </div>
                     <div className="flex flex-col items-start min-w-0 text-left">
                       <span className="text-sm font-medium truncate w-full">
-                        {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || "사용자"}
+                        {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || t('user')}
                       </span>
                       <span className="text-[10px] text-muted-foreground truncate w-full">
                         {user?.email}
@@ -291,7 +293,7 @@ export function MobileSidebar({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">
-                      {user?.displayName || "사용자"}
+                      {user?.displayName || t('user')}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {user?.email}
@@ -307,14 +309,14 @@ export function MobileSidebar({
                   className="cursor-pointer"
                 >
                   <Headset className="w-4 h-4 mr-2" />
-                  <span>고객 센터</span>
+                  <span>{t('customerCenter')}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => { navigate('/settings'); }}
                   className="cursor-pointer"
                 >
                   <Settings className="w-4 h-4 mr-2" />
-                  <span>설정</span>
+                  <span>{t('settings')}</span>
                 </DropdownMenuItem>
                 {!isPro && (
                   <DropdownMenuItem
@@ -322,7 +324,7 @@ export function MobileSidebar({
                     className="cursor-pointer"
                   >
                     <Star className="w-4 h-4 mr-2 text-blue-600" />
-                    <span>프로 요금제로 업그레이드</span>
+                    <span>{t('upgradeToProLong')}</span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
@@ -331,7 +333,7 @@ export function MobileSidebar({
                   className="text-red-600 focus:text-red-600"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  <span>로그아웃</span>
+                  <span>{t('logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -342,7 +344,7 @@ export function MobileSidebar({
               className="w-full justify-start rounded-xl"
             >
               <User className="w-4 h-4 mr-2" />
-              로그인
+              {t('login')}
             </Button>
           )}
         </div>

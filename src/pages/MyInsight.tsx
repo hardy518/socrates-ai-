@@ -43,6 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const MyInsight = () => {
   const { user, loading: authLoading } = useAuth();
@@ -55,6 +56,7 @@ const MyInsight = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("summary");
+  const { t, language } = useLanguage();
 
   const {
     sessions,
@@ -136,10 +138,10 @@ const MyInsight = () => {
     );
   }
 
-  const conversationCount = profile?.conversationCount || 0;
-  const sessionsToNextUpdate = 5 - (conversationCount % 5);
-  // Show guide if we need more sessions for the next update
-  const showGuide = sessionsToNextUpdate > 0;
+  const totalMessageCount = profile?.totalMessageCount || 0;
+  const messagesToNextUpdate = 20 - (totalMessageCount % 20);
+  // Show guide if we need more messages for the next update
+  const showGuide = totalMessageCount < 20;
   const EXAMPLE_INSIGHT = {
     comment: "예시 분석: 당신은 논리적인 추론을 바탕으로 문제의 근본 원인을 탐구하는 성향이 강합니다. 특히 복잡한 현상을 구조화하여 이해하려는 노력이 돋보이며, 감성적인 공감보다는 객관적인 사실에 기반한 결론을 도출하는 데 집중하는 편입니다.",
     categories: [
@@ -169,7 +171,7 @@ const MyInsight = () => {
     }
   };
 
-  const isExample = (profile?.conversationCount || 0) < 5;
+  const isExample = (profile?.totalMessageCount || 0) < 20;
   const displayInsight = isExample ? EXAMPLE_INSIGHT : profile?.insight;
 
   // Formatting categories for Recharts
@@ -315,14 +317,13 @@ const MyInsight = () => {
               <div className="flex-1 min-w-0 space-y-16 lg:space-y-20">
                 {/* Welcome & Guide Banner (Visible only for new users) */}
                 {isExample && (
-                  <section className="bg-primary/5 border border-primary/10 rounded-[32px] p-10 relative overflow-hidden max-w-2xl">
+                  <section className="bg-black/[0.03] border border-black/10 rounded-[32px] p-10 relative overflow-hidden max-w-2xl">
                     <div className="relative z-10 space-y-4 text-center sm:text-left">
-                      <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight leading-tight">
-                        대화 5회를 완료하고<br />당신만의 AI 인사이트를 받아보세요
+                      <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight leading-tight">
+                        {t('insightWelcomeTitle')}
                       </h2>
-                      <p className="text-sm sm:text-base font-medium text-muted-foreground/80 leading-relaxed">
-                        소크라테스와 깊은 대화를 나눌수록 분석이 정교해집니다.<br />
-                        현재는 서비스 이해를 돕기 위한 <span className="text-primary font-bold">예시 데이터</span>가 표시되고 있습니다.
+                      <p className="text-sm sm:text-base font-medium text-black/70 leading-relaxed whitespace-pre-line">
+                        {t('insightWelcomeDesc')}
                       </p>
                       <div className="pt-2">
                         <Button 

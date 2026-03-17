@@ -27,16 +27,34 @@ interface QuestionFormProps {
 }
 
 const CATEGORIES: Category[] = [
-  "수학ㆍ과학",
-  "코딩",
-  "비즈니스ㆍ기획",
-  "글쓰기ㆍ외국어",
-  "데이터ㆍ분석",
-  "기타"
+  "Math & Science",
+  "Coding",
+  "Business & Planning",
+  "Writing & Foreign Language",
+  "Data & Analysis",
+  "Etc"
 ];
 
-const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
-  "수학ㆍ과학": [
+const CATEGORIES_KO: Record<string, string> = {
+  "Math & Science": "수학ㆍ과학",
+  "Coding": "코딩",
+  "Business & Planning": "비즈니스ㆍ기획",
+  "Writing & Foreign Language": "글쓰기ㆍ외국어",
+  "Data & Analysis": "데이터ㆍ분석",
+  "Etc": "기타"
+};
+
+const CATEGORIES_EN: Record<string, string> = {
+  "Math & Science": "Math & Science",
+  "Coding": "Coding",
+  "Business & Planning": "Business & Planning",
+  "Writing & Foreign Language": "Writing & Foreign Language",
+  "Data & Analysis": "Data & Analysis",
+  "Etc": "Etc"
+};
+
+const CATEGORY_SUGGESTIONS_KO: Record<string, string[]> = {
+  "Math & Science": [
     "개념은 아는데 막상 풀려니까 안 되는 부분이 있어요",
     "공식은 외웠는데 왜 그렇게 되는지 모르겠어요",
     "문제 풀이 과정이 맞는지 확인하고 싶어요",
@@ -48,7 +66,7 @@ const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
     "시험에서 틀렸는데 왜 틀렸는지 모르겠어요",
     "배운 내용인데 다시 보면 낯설게 느껴져요"
   ],
-  "코딩": [
+  "Coding": [
     "AI가 짜준 코드가 왜 작동하는지 이해가 안 돼요",
     "오류가 났는데 어디서 틀렸는지 모르겠어요",
     "코드는 돌아가는데 이게 맞는 방식인지 모르겠어요",
@@ -60,7 +78,7 @@ const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
     "AI한테 계속 물어보는데 내 것이 안 되는 느낌이에요",
     "알고리즘 흐름은 아는데 코드로 옮기는 게 안 돼요"
   ],
-  "비즈니스ㆍ기획": [
+  "Business & Planning": [
     "아이디어는 있는데 어떻게 구체화해야 할지 모르겠어요",
     "기획서를 썼는데 논리가 맞는지 모르겠어요",
     "문제는 찾았는데 해결책이 안 떠올라요",
@@ -72,7 +90,7 @@ const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
     "피드백을 받았는데 어떻게 반영해야 할지 모르겠어요",
     "기획 의도는 있는데 문서로 정리가 안 돼요"
   ],
-  "글쓰기ㆍ외국어": [
+  "Writing & Foreign Language": [
     "느낌은 아는데 어떻게 표현해야 할지 모르겠어요",
     "쓰고 싶은 말은 있는데 첫 문장이 안 나와요",
     "글을 썼는데 논리가 맞는지 모르겠어요",
@@ -84,7 +102,7 @@ const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
     "전달하고 싶은 건 있는데 설득력이 없는 것 같아요",
     "외국어로 말은 하는데 내 것이 된 느낌이 안 나요"
   ],
-  "데이터ㆍ분석": [
+  "Data & Analysis": [
     "데이터 결과는 있는데 어떻게 해석해야 할지 모르겠어요",
     "분석은 했는데 인사이트가 안 보여요",
     "숫자는 나왔는데 이게 의미 있는 건지 모르겠어요",
@@ -96,7 +114,7 @@ const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
     "데이터는 있는데 어디서 시작해야 할지 모르겠어요",
     "AI가 뽑아준 결과가 맞는지 검증하고 싶어요"
   ],
-  "기타": [
+  "Etc": [
     "뭘 모르는지 모르는 상태예요",
     "생각이 많은데 정리가 안 돼요",
     "방향은 있는데 첫 발을 못 떼고 있어요",
@@ -110,14 +128,89 @@ const CATEGORY_SUGGESTIONS: Record<Category, string[]> = {
   ]
 };
 
+const CATEGORY_SUGGESTIONS_EN: Record<string, string[]> = {
+  "Math & Science": [
+    "I understand the concept but I'm stuck on this problem.",
+    "I memorized the formula but I don't know why it works.",
+    "I want to check if my solution process is correct.",
+    "I'm not sure how this concept is used in real life.",
+    "Why does it work for some cases but not others?",
+    "I'm stuck on a specific step in the proof.",
+    "I don't see how these concepts are connected.",
+    "I saw the solution but I don't understand the reasoning.",
+    "I got this wrong on the test and don't know why.",
+    "I learned this before but it feels unfamiliar today."
+  ],
+  "Coding": [
+    "I don't understand why the AI-generated code works.",
+    "I've got an error and I'm not sure where the mistake is.",
+    "The code runs but is this the best approach?",
+    "I know the theory but I'm stuck on the implementation.",
+    "I'm using a library but I want to know its internal logic.",
+    "I don't know how to structure my code effectively.",
+    "Why does one method work while another fails for the same task?",
+    "How should I approach debugging this issue?",
+    "I keep asking the AI but I don't feel like I'm really learning.",
+    "I know the algorithm but can't translate it into code."
+  ],
+  "Business & Planning": [
+    "I have an idea but don't know how to flesh it out.",
+    "I wrote a proposal but I'm not sure if the logic holds.",
+    "I identified a problem but can't think of a solution.",
+    "I'm not sure if there's actually a market for this.",
+    "The target seems too broad, how can I narrow it down?",
+    "Direction seems right but feels like something is missing.",
+    "I'm struggling to explain our unique value proposition.",
+    "I have too many ideas and don't know which to prioritize.",
+    "I received feedback but don't know how to incorporate it.",
+    "I have the vision but can't organize it into a document."
+  ],
+  "Writing & Foreign Language": [
+    "I know the feeling but can't find the right words.",
+    "I want to write something but I'm stuck on the first sentence.",
+    "Is the logic of my writing sound?",
+    "I translated it but does it sound natural?",
+    "Grammar seems correct but it feels awkward.",
+    "Does the overall flow of the text make sense?",
+    "I know the vocabulary but struggle to form full sentences.",
+    "I have a draft but don't know how to polish it.",
+    "I have a message but it doesn't feel persuasive enough.",
+    "I can speak the language but it doesn't feel like mine yet."
+  ],
+  "Data & Analysis": [
+    "I have the results but don't know how to interpret them.",
+    "I analyzed the data but can't see the key insights.",
+    "I have the numbers but are they statistically significant?",
+    "Which analytical method should I use for this data?",
+    "I'm not sure if I can trust the data quality.",
+    "How can I effectively visualize these results?",
+    "Is this a correlation or a causation?",
+    "How should I explain these analysis results to others?",
+    "I have the data but don't know where to start.",
+    "I want to verify if the AI-generated results are accurate."
+  ],
+  "Etc": [
+    "I'm in a state of not knowing what I don't know.",
+    "I have many thoughts but can't organize them.",
+    "I have a direction but haven't taken the first step.",
+    "I want to verify if I'm heading in the right direction.",
+    "I keep getting stuck at the same point.",
+    "Something feels missing but I can't put my finger on it.",
+    "I thought I knew it but can't explain it to others.",
+    "Too many options, I don't know which one to choose.",
+    "I'm stuck in my own head and need someone to ask questions.",
+    "I think I have the answer but I'm not sure."
+  ]
+};
+
 export function QuestionForm({
   onSubmit,
   initialProblem
 }: QuestionFormProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const isMobile = useIsMobile();
 
-  const [category, setCategory] = useState<Category>("수학ㆍ과학");
+  const [category, setCategory] = useState<Category>("Math & Science");
   const [problem, setProblem] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<MessageFile[]>([]);
   
@@ -126,7 +219,8 @@ export function QuestionForm({
 
   // Shuffle and pick 3 suggestions when category changes
   useEffect(() => {
-    const questions = CATEGORY_SUGGESTIONS[category];
+    const suggestions = language === 'ko' ? CATEGORY_SUGGESTIONS_KO : CATEGORY_SUGGESTIONS_EN;
+    const questions = suggestions[category];
     if (questions && questions.length > 0) {
       const shuffled = [...questions].sort(() => 0.5 - Math.random());
       setSuggestedQuestions(shuffled.slice(0, 3));
@@ -135,7 +229,7 @@ export function QuestionForm({
       setSuggestedQuestions([]);
       setShowSuggestions(false);
     }
-  }, [category]);
+  }, [category, language]);
 
   useEffect(() => {
     if (initialProblem) {
@@ -151,23 +245,23 @@ export function QuestionForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const captureInputRef = useRef<HTMLInputElement>(null);
 
-  const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
+  const isTechnical = ["Math & Science", "Coding", "Data & Analysis"].includes(category);
 
   const getProblemPlaceholder = (cat: Category) => {
     switch (cat) {
-      case "수학ㆍ과학":
-        return "개념은 알고 있지만, 막상 풀려니까 안 되는 부분이 있나요?";
-      case "코딩":
-        return "AI가 짜준 코드, 왜 작동하는지 이해가 안 가시나요?";
-      case "비즈니스ㆍ기획":
-        return "아이디어를 어떻게 구체화할지 막막한가요?";
-      case "글쓰기ㆍ외국어":
-        return "느낌은 알겠는데, 어떻게 표현해야 할지 애매한가요?";
-      case "데이터ㆍ분석":
-        return "데이터 결과를 어떻게 해석하고 다듬어야 할지 막막한가요?";
-      case "기타":
+      case "Math & Science":
+        return t('placeholderMath');
+      case "Coding":
+        return t('placeholderCoding');
+      case "Business & Planning":
+        return t('placeholderBusiness');
+      case "Writing & Foreign Language":
+        return t('placeholderWriting');
+      case "Data & Analysis":
+        return t('placeholderData');
+      case "Etc":
       default:
-        return "고민이나 궁금한 게 있다면 자유롭게 남겨주세요.";
+        return t('placeholderDefault');
     }
   };
   const problemPlaceholder = getProblemPlaceholder(category);
@@ -187,7 +281,7 @@ export function QuestionForm({
   const processFile = (file: File) => {
     // 1. Check size
     if (file.size > 5 * 1024 * 1024) {
-      alert("파일 크기는 최대 5MB입니다.");
+      alert(t('maxFileSizeError'));
       return;
     }
 
@@ -200,7 +294,7 @@ export function QuestionForm({
 
     if (isImage) {
       if (currentImages.length >= 1) {
-        alert("이미지는 최대 1장까지 업로드 가능합니다.");
+        alert(t('maxImageError'));
         return;
       }
       // Open Cropper
@@ -210,13 +304,13 @@ export function QuestionForm({
       setShowCropper(true);
     } else if (isPdf) {
       if (currentPdfs.length >= 1) {
-        alert("PDF는 최대 1개까지 업로드 가능합니다.");
+        alert(t('maxPdfError'));
         return;
       }
       // Add directly
       addFile(file);
     } else {
-      alert("이미지 또는 PDF 파일만 업로드 가능합니다.");
+      alert(t('invalidFileTypeError'));
     }
   };
 
@@ -255,12 +349,12 @@ export function QuestionForm({
           return;
         }
       }
-      alert("클립보드에 이미지가 없습니다.");
+      alert(t('noImageInClipboard'));
     } catch (err) {
       console.error("Paste failed:", err);
       // Fallback for older browsers or permission issues: handlePaste event on window/document
       // For now, simpler alert
-      alert("스크린샷을 붙여넣을 수 없습니다.");
+      alert(t('pasteFailed'));
     }
   };
 
@@ -286,7 +380,7 @@ export function QuestionForm({
       category,
       problem: problem.trim(),
       files: attachedFiles.length > 0 ? attachedFiles : undefined
-    }, 3); // Default depth is 3
+    }, 10); // Default depth is 10
   };
 
   const isValid = problem.trim();
@@ -298,7 +392,7 @@ export function QuestionForm({
         <div className="flex items-center gap-3">
           <img src={logoImage} alt="Socrates AI Logo" className="w-9 h-9 rounded-lg shadow-sm" />
           <h1 className="text-2xl sm:text-3xl font-medium text-foreground tracking-tight">
-            오늘은 무엇을 탐구해볼까요?
+            {t('exploreToday')}
           </h1>
         </div>
       </div>
@@ -306,7 +400,7 @@ export function QuestionForm({
       {/* Category Selection */}
       <div className="space-y-2">
         <label className="text-sm font-semibold text-foreground flex items-center gap-1">
-          어떤 분야인가요? <span className="text-destructive font-bold">*</span>
+          {t('areaSelection')} <span className="text-destructive font-bold">*</span>
         </label>
         <div className="flex justify-start">
         <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
@@ -316,7 +410,7 @@ export function QuestionForm({
           <SelectContent className="bg-white border border-[#E0E0E0] rounded-xl shadow-lg z-50">
             {CATEGORIES.map((cat) => (
               <SelectItem key={cat} value={cat} className="rounded-lg text-base py-2">
-                {cat}
+                {language === 'ko' ? CATEGORIES_KO[cat] : CATEGORIES_EN[cat]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -326,7 +420,7 @@ export function QuestionForm({
 
       <div className="space-y-2">
         <label className="text-sm font-semibold text-foreground flex items-center gap-1">
-          무엇을 고민하고 계신가요? <span className="text-destructive font-bold">*</span>
+          {t('problemDescription')} <span className="text-destructive font-bold">*</span>
         </label>
         <form onSubmit={handleSubmit} className="space-y-4 relative">
         <div className="w-full">
@@ -386,22 +480,22 @@ export function QuestionForm({
                       <>
                         <DropdownMenuItem onClick={() => captureInputRef.current?.click()}>
                           <Camera className="w-4 h-4 mr-2" />
-                          카메라
+                          {t('camera')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                           <ImageIconLucide className="w-4 h-4 mr-2" />
-                          사진
+                          {t('photo')}
                         </DropdownMenuItem>
                       </>
                     ) : (
                       <>
                         <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                           <FileIcon className="w-4 h-4 mr-2" />
-                          파일 또는 사진
+                          {t('fileOrPhoto')}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handlePaste}>
                           <Scissors className="w-4 h-4 mr-2" />
-                          스크린샷 (Ctrl+V)
+                          {t('screenshotPaste')}
                         </DropdownMenuItem>
                       </>
                     )}
@@ -453,13 +547,13 @@ export function QuestionForm({
             <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-white">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-sm font-medium">{category}</span>
+                   <span className="text-sm font-medium">{language === 'ko' ? CATEGORIES_KO[category] : CATEGORIES_EN[category]}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowSuggestions(false)}
                   className="p-1 rounded-full hover:bg-secondary text-muted-foreground transition-colors"
-                  aria-label="추천 질문 닫기"
+                   aria-label={t('closeSuggestions')}
                 >
                   <X className="w-4 h-4" />
                 </button>

@@ -53,7 +53,7 @@ export const handler: Handler = async (event) => {
     console.log(`Processing subscription for user: ${userId}, billingKey: ${billingKey}`);
 
     try {
-        // 1. Process initial payment (₩7,000)
+        // 1. Process initial payment (₩7,500)
         const paymentId = `initial_${userId}_${Date.now()}`;
         const payResponse = await fetch(`https://api.portone.io/payments/${paymentId}/billing-key`, {
             method: "POST",
@@ -66,7 +66,7 @@ export const handler: Handler = async (event) => {
                 channelKey,
                 orderName: "소크라테스 AI Pro 정기구독 (첫 결제)",
                 currency: "KRW",
-                amount: { total: 7000 },
+                amount: { total: 7500 },
                 customer: {
                     id: userId,
                     name: {
@@ -126,7 +126,7 @@ export const handler: Handler = async (event) => {
                     billingKey: billingKey,
                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
                     currency: "KRW",
-                    amount: { total: 7000 },
+                    amount: { total: 7500 },
                     customer: { id: userId },
                     customData: userId,
                 },

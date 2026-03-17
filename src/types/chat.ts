@@ -12,9 +12,10 @@ export interface Message {
   content: string;
   timestamp: number;
   files?: MessageFile[];
+  feedback?: 'like' | 'dislike';
 }
 
-export type Category = "수학ㆍ과학" | "코딩" | "비즈니스ㆍ기획" | "글쓰기ㆍ외국어" | "데이터ㆍ분석" | "기타";
+export type Category = "Math & Science" | "Coding" | "Business & Planning" | "Writing & Foreign Language" | "Data & Analysis" | "Etc";
 
 export interface Spectrums {
   whyVsHow: number;
@@ -57,6 +58,7 @@ export interface ChatSession {
   currentStep: number;
   messages: Message[];
   isResolved: boolean;
+  isSummarized?: boolean;
   isPinned?: boolean;
   createdAt: number;
   updatedAt: number;

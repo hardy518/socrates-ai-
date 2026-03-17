@@ -62,7 +62,7 @@ export function ChatInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative flex flex-col w-full bg-background border border-border rounded-xl shadow-sm transition-all shadow-input"
+      className="relative flex flex-col w-full bg-background border border-black/10 rounded-xl shadow-sm transition-all shadow-input"
     >
       <div className="flex-1 min-h-[44px] max-h-32 overflow-y-auto scrollbar-thin">
         <textarea
@@ -89,14 +89,14 @@ export function ChatInput({
           disabled={(!isValid && !isLoading) || (isLoading && !isValid && !disabled)}
           size="icon"
           className={`rounded-lg w-9 h-9 transition-all duration-200 ${isValid || isLoading
-            ? "bg-primary text-primary-foreground opacity-100 scale-100 shadow-sm hover:bg-primary/90"
-            : "bg-muted text-muted-foreground opacity-30 scale-95 pointer-events-none"
+            ? "bg-primary text-primary-foreground opacity-100 scale-100 shadow-md hover:bg-primary/90"
+            : "bg-[#E5E5E5] text-muted-foreground/60 opacity-80 scale-95 pointer-events-none"
             }`}
         >
           {isLoading ? (
-            <Square className="w-4 h-4 fill-current" />
+            <Square className="w-4 h-4 fill-current stroke-[3px]" />
           ) : (
-            <ArrowUp className="w-5 h-5" />
+            <ArrowUp className="w-5 h-5 stroke-[2.5px]" />
           )}
         </Button>
       </div>

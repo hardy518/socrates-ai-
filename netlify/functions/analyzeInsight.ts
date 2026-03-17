@@ -92,7 +92,7 @@ ${JSON.stringify(conversations, null, 2)}
 `;
 
     const msg = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20240620",
+      model: "claude-haiku-4-5",
       max_tokens: 1024,
       system: "당신은 소크라테스 AI의 사용자 성향 분석기입니다. JSON만 반환하세요. 설명, 백틱, 마크다운 없이.",
       messages: [{ role: "user", content: prompt }],

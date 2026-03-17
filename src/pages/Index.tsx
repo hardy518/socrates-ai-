@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useChatStorage } from "@/hooks/useChatStorage";
-import { useUsageLimit } from "@/hooks/useUsageLimit";
+import { useUsageLimit, DEPTH_ANONYMOUS, DEPTH_FREE, DEPTH_PRO } from "@/hooks/useUsageLimit";
 import { useEffect, useRef, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -16,19 +16,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getUserSettings, setUserSettings } from "@/utils/userProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { UsageLimitModal } from "@/components/UsageLimitModal";
+import { UsageLimitCard } from "@/components/UsageLimitCard";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
   const { t } = useLanguage();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(isMobile);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isUsageModalOpen, setIsUsageModalOpen] = useState(false);
 
   const {
     sessions,
@@ -42,22 +41,42 @@ const Index = () => {
     clearActiveSession,
     updateSessionTitle,
     togglePinSession,
+    updateMessage,
+    forkSession,
   } = useChatStorage();
 
   const { user } = useAuth();
 
-  const { canUse, checkAndIncrementUsage } = useUsageLimit();
+  const { canUse, isPro, checkAndIncrementUsage } = useUsageLimit();
 
   // Load settings from user profile
   useEffect(() => {
     const loadSettings = async () => {
       if (user && !user.isAnonymous) {
-        const settings = await getUserSettings(user.uid);
-        // depth settings removed
+        await getUserSettings(user.uid);
       }
     };
     loadSettings();
   }, [user]);
+
+  // 🔥 URL의 session 파라미터와 activeSessionId 동기화
+  useEffect(() => {
+    const sessionFromUrl = searchParams.get('session');
+    if (sessionFromUrl && sessionFromUrl !== activeSessionId) {
+      setActiveSessionId(sessionFromUrl);
+    } else if (!sessionFromUrl && activeSessionId) {
+      clearActiveSession();
+    }
+  }, [searchParams, activeSessionId, setActiveSessionId, clearActiveSession]);
+
+  const handleSelectSession = (id: string) => {
+    setSearchParams({ session: id });
+  };
+
+  const handleNewSession = () => {
+    setSearchParams({});
+    clearActiveSession();
+  };
 
   // Sync collapsed state with mobile/desktop transition
   useEffect(() => {
@@ -97,7 +116,6 @@ const Index = () => {
 
   const handleCreateSession = async (form: QuestionFormType) => {
     if (!canUse) {
-      setIsUsageModalOpen(true);
       return;
     }
 
@@ -105,8 +123,16 @@ const Index = () => {
     let createdSessionId: string | null = null;
 
     try {
-      const newSession = await createSession(form, 3); // Default depth is 3
+      let newSessionDepth = DEPTH_FREE;
+      if (isPro) {
+        newSessionDepth = DEPTH_PRO;
+      } else if (user?.isAnonymous) {
+        newSessionDepth = DEPTH_ANONYMOUS;
+      }
+
+      const newSession = await createSession(form, newSessionDepth);
       createdSessionId = newSession.id;
+      setSearchParams({ session: createdSessionId }); // 🔥 세션 생성 직후 URL 즉시 업데이트
 
       const success = await checkAndIncrementUsage(createdSessionId);
       if (!success) {
@@ -160,7 +186,7 @@ const Index = () => {
 
     } catch (err) {
       console.error("❌ 세션 생성 실패:", err);
-      toast.error(t('sessionCreateFailed'));
+      toast.error(t('failed'));
       // 에러 발생 시 세션 삭제
       if (createdSessionId) {
         await deleteSession(createdSessionId);
@@ -196,6 +222,12 @@ const Index = () => {
     await resolveSession(activeSession.id);
   };
 
+  const handleFeedback = async (messageId: string, feedback: 'like' | 'dislike') => {
+    if (!activeSession) return;
+    await updateMessage(activeSession.id, messageId, { feedback });
+  };
+
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
       {/* Desktop Sidebar (Only visible on SM and above) */}
@@ -203,8 +235,8 @@ const Index = () => {
         <Sidebar
           sessions={sessions}
           activeSessionId={activeSessionId}
-          onSelectSession={setActiveSessionId}
-          onNewSession={clearActiveSession}
+          onSelectSession={handleSelectSession}
+          onNewSession={handleNewSession}
           onDeleteSession={deleteSession}
           onUpdateTitle={updateSessionTitle}
           onTogglePin={togglePinSession}
@@ -217,8 +249,8 @@ const Index = () => {
       <MobileSidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
-        onSelectSession={setActiveSessionId}
-        onNewSession={clearActiveSession}
+        onSelectSession={handleSelectSession}
+        onNewSession={handleNewSession}
         onDeleteSession={deleteSession}
         onUpdateTitle={updateSessionTitle}
         onTogglePin={togglePinSession}
@@ -237,6 +269,7 @@ const Index = () => {
               onResolve={handleResolve}
               isInitialLoading={isCreatingSession}
               onMenuClick={() => setIsMobileSidebarOpen(true)}
+              onFeedback={handleFeedback}
             />
           ) : (
             <div className="flex-1 flex flex-col min-w-0 bg-background relative overflow-y-auto h-full">
@@ -264,10 +297,14 @@ const Index = () => {
               <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[15vh] px-6 min-h-[500px]">
                 <div className="max-w-2xl w-full">
 
-                  <QuestionForm
-                    onSubmit={handleCreateSession}
-                    initialProblem={searchParams.get('problem') || ""}
-                  />
+                  {canUse ? (
+                    <QuestionForm
+                      onSubmit={handleCreateSession}
+                      initialProblem={searchParams.get('problem') || ""}
+                    />
+                  ) : (
+                    <UsageLimitCard />
+                  )}
                 </div>
               </div>
             </div>
@@ -275,10 +312,6 @@ const Index = () => {
         </main>
       </div>
 
-      <UsageLimitModal 
-        isOpen={isUsageModalOpen} 
-        onClose={() => setIsUsageModalOpen(false)} 
-      />
     </div>
   );
 };

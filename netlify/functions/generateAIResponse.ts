@@ -1,11 +1,36 @@
 import { Handler } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-const GET_SYSTEM_PROMPT = (category: string, depth = 3) => {
+// Firebase Admin 초기화
+const firebaseConfig = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+
+if (!getApps().length) {
+    initializeApp({
+        credential: cert(firebaseConfig)
+    });
+}
+
+const db = getFirestore();
+
+const GET_SYSTEM_PROMPT = (category: string, depth = 3, learnings: string = "") => {
     const isTechnical = ["수학ㆍ과학", "코딩", "데이터ㆍ분석"].includes(category);
     const baseInstruction = `당신은 AI 조력자입니다. 당신의 현재 카테고리는 [${category}]입니다. 친근하고 자연스러운 대화체를 유지하세요. 한국어로만 응답합니다.`;
 
+    const learningContext = learnings ? `
+[이전 학습 기록]
+${learnings}
+
+규칙:
+- 사용자가 입력한 고민에 먼저 반응하세요.
+- 이전 학습 기록은 직접적으로 언급하지 마세요. (예: "지난번에 ~를 배우셨는데"와 같은 표현 지양)
+- 이전 학습 기록에 나타난 사용자의 사고 수준이나 지식 범위를 고려하여, 질문 방식에만 자연스럽게 녹여내세요.
+- 질문은 한 번에 하나만 하세요.
+` : "";
+
     const socratesInstruction = `${baseInstruction}
+${learningContext}
 
 당신은 소크라테스식 대화를 이끄는 조력자입니다.
 
@@ -63,20 +88,37 @@ export const handler: Handler = async (event) => {
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({
-                error: "Anthropic API key is not configured.",
-                debug: {
-                    hasAnthropic: !!process.env.ANTHROPIC_API_KEY,
-                    hasViteAnthropic: !!process.env.VITE_ANTHROPIC_API_KEY,
-                    envKeys: Object.keys(process.env).filter(key => key.includes('API') || key.includes('ANTHROPIC') || key.includes('VITE'))
-                }
-            })
+            body: JSON.stringify({ error: "Anthropic API key is not configured." })
         };
     }
 
-    const { session, userMessage, files } = JSON.parse(event.body || "{}");
+    const { session, userMessage, files, userId } = JSON.parse(event.body || "{}");
     const client = new Anthropic({ apiKey });
-    const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.depth) + COMMON_RULES;
+
+    // 1. 이전 메시지 요약(Learnings) 가져오기
+    let learningContext = "";
+    if (userId) {
+        try {
+            const summariesSnapshot = await db.collection('users').doc(userId).collection('sessionSummaries')
+                .orderBy('createdAt', 'desc')
+                .limit(3)
+                .get();
+
+            if (!summariesSnapshot.empty) {
+                learningContext = summariesSnapshot.docs
+                    .map(doc => {
+                        const data = doc.data();
+                        return `- [${data.category}] ${data.problem} → 배운 것: ${data.learned || '없음'}`;
+                    })
+                    .join('\n');
+            }
+        } catch (error) {
+            console.error("Error fetching session summaries:", error);
+            // 에러 시 조용히 실패 (기능 영향 최소화)
+        }
+    }
+
+    const systemPrompt = GET_SYSTEM_PROMPT(session.category, session.depth, learningContext) + COMMON_RULES;
 
     const userContent: any[] = [{ type: "text", text: userMessage }];
 
@@ -113,7 +155,7 @@ export const handler: Handler = async (event) => {
 
     try {
         const response: any = await client.messages.create({
-            model: "claude-haiku-4-5-20251001",
+            model: "claude-haiku-4-5",
             max_tokens: 4096,
             messages: anthropicMessages,
             system: systemPrompt,

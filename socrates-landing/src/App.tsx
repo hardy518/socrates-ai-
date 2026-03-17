@@ -564,7 +564,7 @@ function App() {
               <div className="inline-block px-3 py-1 rounded-full bg-[#4285f4] text-white text-xs font-bold mb-4 self-start">추천</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-black text-slate-900">₩7,000</span>
+                  <span className="text-4xl font-black text-slate-900">₩7,500</span>
                   <span className="text-slate-500 text-sm font-medium">/월</span>
                 </div>
                 <p className="text-slate-500 text-sm mt-1">더 깊이 생각하고 싶을 때</p>
@@ -590,7 +590,7 @@ function App() {
               <div className="inline-block px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold mb-4">기관/기업</div>
               <div className="mb-2">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-slate-900">₩7,000</span>
+                  <span className="text-2xl font-black text-slate-900">₩7,500</span>
                   <span className="text-slate-500 text-sm font-medium">/ 1인 · 월</span>
                 </div>
                 <p className="text-slate-500 text-sm mt-1">조직을 위한 맞춤 솔루션</p>

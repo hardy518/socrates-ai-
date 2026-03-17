@@ -12,7 +12,7 @@ export const detectUserLanguage = (): SupportedLanguage => {
         return 'ko';
     }
 
-    return 'en';
+    return 'ko';
 };
 
 export const saveLanguagePreference = (language: SupportedLanguage): void => {
