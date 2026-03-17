@@ -1,4 +1,4 @@
-import { Handler, schedule } from "@netlify/functions";
+import { schedule } from "@netlify/functions";
 import Anthropic from "@anthropic-ai/sdk";
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
@@ -16,8 +16,8 @@ const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
-// 매 10분마다 실행되는 스케줄러
-const handler: Handler = async (event) => {
+// 매 30분마다 실행되는 스케줄러
+const coreHandler = async (event: any) => {
     console.log("Starting session summary processing...");
 
     try {
@@ -94,4 +94,4 @@ ${conversationText}`;
     }
 };
 
-export const scheduledHandler = schedule("*/10 * * * *", handler);
+export const handler = schedule("*/30 * * * *", coreHandler);
