@@ -137,7 +137,7 @@ const Settings = () => {
     };
 
     const observer = new IntersectionObserver(observerCallback, observerOptions);
-    const sectionIds = ['account', 'subscription', 'billing', 'settings', 'legal', 'support'];
+    const sectionIds = ['account', 'subscription', 'billing', 'legal', 'support'];
     
     sectionIds.forEach((id) => {
       const element = document.getElementById(id);
@@ -220,16 +220,6 @@ const Settings = () => {
     } finally {
       setIsDeletingAccount(false);
       setDeleteModalOpen(false);
-    }
-  };
-
-  const handleToggleNotification = async (checked: boolean) => {
-    if (!user) return;
-    try {
-      await setUserSettings(user.uid, { insightNotification: checked });
-      setProfile(prev => prev ? { ...prev, insightNotification: checked } : null);
-    } catch (error) {
-      toast.error(t('saveSettingsError'));
     }
   };
 
@@ -347,7 +337,6 @@ const Settings = () => {
     { id: "account", label: t('account') },
     { id: "subscription", label: t('membership') },
     { id: "billing", label: t('invoices') },
-    { id: "settings", label: t('notifications') },
     { id: "legal", label: t('legal') },
     { id: "support", label: t('actions') },
   ];
@@ -615,57 +604,6 @@ const Settings = () => {
                   )}
                 </section>
 
-                {/* 4. General Settings */}
-                <section id="settings" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-bold text-black tracking-tight">{t('language')}</h3>
-                    
-                    <div className="flex items-center justify-between py-2 max-w-2xl">
-                      <div className="space-y-1">
-                        <p className="text-[16px] font-medium text-black">{language === 'ko' ? '한국어' : 'English'}</p>
-                        <p className="text-sm text-black/50 leading-relaxed">
-                          {language === 'ko' ? '기본 언어를 선택하세요.' : 'Select your preferred language.'}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setLanguage('ko')}
-                          className={cn(
-                            "rounded-full px-4 font-bold text-[13px] transition-all",
-                            language === 'ko' ? "bg-black text-white" : "text-black/40 hover:text-black hover:bg-black/5"
-                          )}
-                        >
-                          한국어
-                        </Button>
-                        <Button 
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setLanguage('en')}
-                          className={cn(
-                            "rounded-full px-4 font-bold text-[13px] transition-all",
-                            language === 'en' ? "bg-black text-white" : "text-black/40 hover:text-black hover:bg-black/5"
-                          )}
-                        >
-                          English
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between py-2 max-w-2xl border-t border-border/30 pt-6">
-                      <div className="space-y-1">
-                        <p className="text-[16px] font-medium text-black">{t('insightNotifications')}</p>
-                        <p className="text-sm text-black/50 leading-relaxed">{t('insightNotificationDesc')}</p>
-                      </div>
-                      <Switch 
-                        className="data-[state=checked]:bg-black"
-                        checked={profile?.insightNotification}
-                        onCheckedChange={handleToggleNotification}
-                      />
-                    </div>
-                  </div>
-                </section>
 
                 {/* 5. Legal */}
                 <section id="legal" className="space-y-8 scroll-mt-24 pt-16 border-t border-border">

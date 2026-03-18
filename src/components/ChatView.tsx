@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { CopyButton } from "./ui/CopyButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface ChatViewProps {
   session: ChatSession;
@@ -24,9 +25,11 @@ interface ChatViewProps {
   isInitialLoading?: boolean;
   onMenuClick?: () => void;
   onFeedback: (messageId: string, feedback: 'like' | 'dislike') => void;
+  onUpdateTitle?: (sessionId: string, title: string) => void;
+  onUpdateProblem?: (sessionId: string, problem: string) => void;
 }
 
-export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, isInitialLoading, onMenuClick, onFeedback }: ChatViewProps) {
+export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, isInitialLoading, onMenuClick, onFeedback, onUpdateTitle, onUpdateProblem }: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,7 +91,7 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
 
   // Quick Replies 조건
   const assistantCount = session.messages.filter(m => m.role === 'assistant').length;
-  const showQuickReplies = assistantCount >= 5 && 
+  const showQuickReplies = assistantCount >= 6 && 
                           lastMessage?.role === 'assistant' && 
                           !isLoading && 
                           !showAnswer && 
@@ -110,11 +113,12 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
 
 
   useEffect(() => {
-    // 페이지 전체(window) 스크롤
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: "smooth",
-    });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [session.messages, isLoading, isInitialLoading, showAnswer, isLoadingAnswer, isEditingProblem]);
 
   const handleSend = async (content: string, files?: MessageFile[]) => {
@@ -126,13 +130,17 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
       setIsEditingProblem(false);
     }
 
+    if ((!session.problem || session.problem.trim() === "") && onUpdateProblem) {
+      onUpdateProblem(session.id, content);
+    }
+    
     // 1) 유저 메시지 저장
     onSendMessage(messageContent, files);
     setIsLoading(true);
     setError(null);
 
     try {
-      const aiResponse = await generateAIResponse(session, messageContent);
+      const aiResponse = await generateAIResponse(session, messageContent, files);
 
       // [ANSWER_FOUND] 감지
       if (aiResponse.startsWith('[ANSWER_FOUND]')) {
@@ -147,6 +155,26 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
         }
       } else {
         onSendAIMessage(aiResponse);
+      }
+
+      // 4) 세션 제목이 비어있거나 대기 문구이면 AI에게 제목 생성 요청
+      const isPlaceholderTitle = session.title === t('waitingForFirstMessage');
+      if ((!session.title || session.title.trim() === "" || isPlaceholderTitle) && onUpdateTitle) {
+        try {
+          const titlePrompt = `방금 유저가 보낸 첫 메시지를 보고 10자 내외의 세션 제목을 만들어줘. TITLE: [제목] 형식으로만 응답해.
+          
+유저 메시지: ${messageContent}`;
+          
+          const titleResponse = await generateAIResponse(session, titlePrompt);
+          const titleMatch = titleResponse.match(/TITLE:\s*(.+)/);
+          
+          if (titleMatch && titleMatch[1]) {
+            const newTitle = titleMatch[1].trim();
+            onUpdateTitle(session.id, newTitle);
+          }
+        } catch (titleErr) {
+          console.error("제목 생성 실패:", titleErr);
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "응답을 생성하는 중 오류가 발생했습니다.";
@@ -263,7 +291,7 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
         </div>
 
         {/* ===== 2. 대화 메시지 영역 ===== */}
-        <div className="flex-1 px-4 sm:px-6 py-4 space-y-12">
+        <div className="flex-1 px-4 sm:px-6 py-4 space-y-8 transition-all">
           {(isInitialLoading || session.messages.length === 0) && (
             <div className="flex justify-start">
               <div className="space-y-2">
@@ -278,27 +306,45 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
           )}
 
           {session.messages.map((msg, index) => (
-            <ChatMessage 
-              key={msg.id} 
-              message={msg} 
-              isDirectMode={false} 
-              isLast={index === session.messages.length - 1} 
-              onFeedback={(f) => onFeedback(msg.id, f)}
-            />
+            <div key={msg.id} className={cn("w-full", index === 0 ? "mb-1" : "")}>
+              <ChatMessage 
+                message={msg} 
+                isDirectMode={false} 
+                isLast={index === session.messages.length - 1} 
+                onFeedback={(f) => onFeedback(msg.id, f)}
+                className={index === 0 ? "mb-1" : ""}
+              />
+              {index === 0 && msg.role === 'assistant' && msg.examples && msg.examples.length > 0 && (
+                <div className="mt-0 mb-8 border-l-2 border-primary/20 pl-4 py-1">
+                  <div className="space-y-2">
+                    {msg.examples.map((ex, i) => (
+                      <p 
+                        key={i} 
+                        className="text-[13.5px] text-foreground/70 font-medium leading-relaxed flex items-start gap-2 animate-in fade-in slide-in-from-bottom-1 duration-700 fill-mode-both"
+                        style={{ animationDelay: `${500 + (i * 150)}ms` }}
+                      >
+                        <span className="text-primary/40 mt-1">•</span>
+                        <span>{ex}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
 
           {/* Quick Replies */}
           {showQuickReplies && (
-            <div className="flex flex-row gap-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div className="flex flex-row gap-2 w-full animate-in fade-in slide-in-from-bottom-2 duration-500 !mt-2">
               <button
                 onClick={handleViewAnswer}
-                className="rounded-full px-4 py-2 text-sm border border-black/10 transition-all hover:bg-secondary active:scale-95 bg-background font-medium"
+                className="rounded-full px-4 py-2 text-sm border border-border bg-secondary/30 transition-all hover:bg-secondary active:scale-95 font-medium shadow-sm hover:shadow-md"
               >
                 {t('viewAnswer')}
               </button>
               <button
                 onClick={() => navigate('/')}
-                className="rounded-full px-4 py-2 text-sm border border-black/10 transition-all hover:bg-secondary active:scale-95 bg-background font-medium"
+                className="rounded-full px-4 py-2 text-sm border border-border bg-secondary/30 transition-all hover:bg-secondary active:scale-95 font-medium shadow-sm hover:shadow-md"
               >
                 {t('newSession')}
               </button>
@@ -326,7 +372,7 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
             <div className="bg-secondary/30 rounded-xl p-5 space-y-3 border border-border shadow-sm mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300 group/answer relative">
               <div className="flex items-center justify-between text-primary">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-semibold">해결 방향</span>
+                  <span className="font-mono text-sm font-semibold">탐구 내용</span>
                 </div>
                 {!isLoadingAnswer && finalAnswer && (
                   <CopyButton
@@ -337,8 +383,8 @@ export function ChatView({ session, onSendMessage, onSendAIMessage, onResolve, i
               </div>
               <div className="text-sm text-foreground leading-relaxed">
                 {isLoadingAnswer ? (
-                  <div className="flex items-center gap-2 font-mono">
-                    <span className="text-muted-foreground">해결 방안을 작성하고 있습니다...</span>
+                  <div className="flex items-center gap-2 font-mono text-foreground/70">
+                    <span>탐구 내용을 정리하고 있습니다...</span>
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

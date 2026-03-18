@@ -13,6 +13,8 @@ export const translations = {
         loading: "로딩 중...",
         failed: "실패했습니다",
         processing: "처리 중",
+        settingsSaved: "설정이 저장되었습니다.",
+        settingsSaveError: "설정 저장에 실패했습니다.",
 
         // Sidebar & Navigation
         newSession: "새 대화",
@@ -43,6 +45,7 @@ export const translations = {
         insightWelcomeTitle: "대화를 하면 나의 성향과 인사이트를 확인할 수 있어요",
         insightWelcomeDesc: "소크라테스와 깊은 대화를 나눌수록 분석이 정교해집니다. 메시지를 약 20번 입력하면 데이터를 확인할 수 있어요.",
         viewAnswer: "정답 보기",
+        waitingForFirstMessage: "첫 메시지를 기다리는 중이에요",
 
         // Question Form
         exploreToday: "오늘은 무엇을 탐구해볼까요?",
@@ -205,6 +208,8 @@ export const translations = {
         loading: "Loading...",
         failed: "Failed",
         processing: "Processing",
+        settingsSaved: "Settings saved successfully.",
+        settingsSaveError: "Failed to save settings.",
 
         // Sidebar & Navigation
         newSession: "New Chat",
@@ -235,6 +240,7 @@ export const translations = {
         insightWelcomeTitle: "You can check your traits and insights through conversation",
         insightWelcomeDesc: "The more you engage in deep conversations with Socrates, the more precise our analysis becomes. Enter about 20 messages to view your data.",
         viewAnswer: "View Answer",
+        waitingForFirstMessage: "Waiting for the first message",
 
         // Question Form
         exploreToday: "What should we explore today?",

@@ -13,9 +13,17 @@ export interface Message {
   timestamp: number;
   files?: MessageFile[];
   feedback?: 'like' | 'dislike';
+  examples?: string[];
 }
 
-export type Category = "Math & Science" | "Coding" | "Business & Planning" | "Writing & Foreign Language" | "Data & Analysis" | "Etc";
+export type Category = 
+  | "problem-solving" 
+  | "idea-exploration" 
+  | "debate" 
+  | "self-development" 
+  | "language" 
+  | "creation" 
+  | "free-exploration";
 
 export interface Spectrums {
   whyVsHow: number;

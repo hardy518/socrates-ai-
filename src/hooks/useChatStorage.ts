@@ -4,6 +4,7 @@ import {
   doc,
   addDoc,
   updateDoc,
+  setDoc,
   deleteDoc,
   getDoc,
   query,
@@ -48,7 +49,7 @@ export function useChatStorage() {
           return {
             id: doc.id,
             title: data.title,
-            category: data.category || "수학ㆍ과학",
+            category: data.category || "problem-solving",
             problem: data.problem,
 
             depth: data.depth,
@@ -79,14 +80,16 @@ export function useChatStorage() {
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || null;
 
-  const createSession = useCallback(async (form: QuestionForm, depth: number): Promise<ChatSession> => {
+  const createSession = useCallback(async (form: QuestionForm, depth: number, initialTitle?: string): Promise<ChatSession> => {
     if (!user) {
       throw new Error('로그인이 필요합니다');
     }
 
     const newSession = {
       userId: user.uid,
-      title: form.problem.slice(0, 30) + (form.problem.length > 30 ? '...' : ''),
+      title: form.problem 
+        ? (form.problem.slice(0, 30) + (form.problem.length > 30 ? '...' : ''))
+        : (initialTitle || ""),
       category: form.category,
       problem: form.problem,
 
@@ -107,10 +110,10 @@ export function useChatStorage() {
       const userDoc = await getDoc(userRef);
       const currentCount = (userDoc.data()?.conversationCount || 0) + 1;
 
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         conversationCount: increment(1),
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
 
       const createdSession: ChatSession = {
         id: docRef.id,
@@ -173,10 +176,10 @@ export function useChatStorage() {
         const userDoc = await getDoc(userRef);
         const currentTotalMessages = (userDoc.data()?.totalMessageCount || 0) + 1;
 
-        await updateDoc(userRef, {
+        await setDoc(userRef, {
           totalMessageCount: increment(1),
           updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
 
         // 20회마다 인사이트 분석 실행
         if (currentTotalMessages % 20 === 0) {
@@ -242,6 +245,19 @@ export function useChatStorage() {
       });
     } catch (error) {
       console.error('세션 제목 업데이트 실패:', error);
+    }
+  }, [user]);
+
+  const updateSessionProblem = useCallback(async (sessionId: string, newProblem: string) => {
+    if (!user) return;
+    try {
+      const sessionRef = doc(db, 'conversations', sessionId);
+      await updateDoc(sessionRef, {
+        problem: newProblem,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('세션 문제 업데이트 실패:', error);
     }
   }, [user]);
   
@@ -325,6 +341,7 @@ export function useChatStorage() {
     togglePinSession,
     updateMessage,
     forkSession,
+    updateSessionProblem,
     isLoading,
   };
 }

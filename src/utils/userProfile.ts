@@ -16,8 +16,9 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
         if (userDoc.exists()) {
             const data = userDoc.data();
             return {
+                ...data,
                 insightNotification: data.insightNotification !== undefined ? data.insightNotification : true
-            };
+            } as UserSettings;
         }
         return { insightNotification: true };
     } catch (error) {

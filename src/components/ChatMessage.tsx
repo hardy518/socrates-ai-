@@ -5,15 +5,17 @@ import remarkGfm from "remark-gfm";
 import { CopyButton } from "./ui/CopyButton";
 import { useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface ChatMessageProps {
   message: Message;
   isDirectMode?: boolean;
   isLast?: boolean;
   onFeedback?: (feedback: 'like' | 'dislike') => void;
+  className?: string;
 }
 
-export function ChatMessage({ message, isDirectMode, isLast, onFeedback }: ChatMessageProps) {
+export function ChatMessage({ message, isDirectMode, isLast, onFeedback, className }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   const formatFileSize = (bytes: number) => {
@@ -23,7 +25,7 @@ export function ChatMessage({ message, isDirectMode, isLast, onFeedback }: ChatM
   };
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-6`}>
+    <div className={cn(`flex ${isUser ? "justify-end" : "justify-start"}`, className || "mb-6")}>
       {isUser ? (
         // 유저 메시지 - 말풍선
         <div className="flex flex-col items-end max-w-[80%] group/user">

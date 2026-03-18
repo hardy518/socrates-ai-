@@ -44,6 +44,8 @@ import { Progress } from "@/components/ui/progress";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 const MyInsight = () => {
   const { user, loading: authLoading } = useAuth();
@@ -95,6 +97,17 @@ const MyInsight = () => {
     fetchData();
   }, [user, authLoading, navigate]);
 
+  const handleToggleNotification = async (checked: boolean) => {
+    if (!user) return;
+    try {
+      await setUserSettings(user.uid, { insightNotification: checked });
+      setProfile(prev => prev ? { ...prev, insightNotification: checked } : null);
+      toast.success(t('settingsSaved'));
+    } catch (error) {
+      toast.error(t('settingsSaveError'));
+    }
+  };
+
   // Scroll tracking for mobile nav
   useEffect(() => {
     const observerOptions = {
@@ -145,12 +158,13 @@ const MyInsight = () => {
   const EXAMPLE_INSIGHT = {
     comment: "예시 분석: 당신은 논리적인 추론을 바탕으로 문제의 근본 원인을 탐구하는 성향이 강합니다. 특히 복잡한 현상을 구조화하여 이해하려는 노력이 돋보이며, 감성적인 공감보다는 객관적인 사실에 기반한 결론을 도출하는 데 집중하는 편입니다.",
     categories: [
-      { name: "수학ㆍ과학", count: 12 },
-      { name: "코딩", count: 8 },
-      { name: "비즈니스ㆍ기획", count: 7 },
-      { name: "글쓰기ㆍ외국어", count: 5 },
-      { name: "데이터ㆍ분석", count: 4 },
-      { name: "기타", count: 2 }
+      { name: "문제 풀이", count: 12 },
+      { name: "아이디어 탐구", count: 8 },
+      { name: "토론", count: 7 },
+      { name: "자기계발", count: 5 },
+      { name: "언어 · 외국어", count: 4 },
+      { name: "창작", count: 2 },
+      { name: "자유 탐구", count: 1 }
     ],
     deepConversations: [
       { title: "자유의지와 결정론에 대하여", conversationId: "example-1", count: 24 },
@@ -340,12 +354,20 @@ const MyInsight = () => {
                 <div className="space-y-16 lg:space-y-20">
                   {/* AI Summary Section */}
                   <section id="summary" className="space-y-6 scroll-mt-24">
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                        <h3 className="text-xl font-medium text-black tracking-tight">AI 분석 요약</h3>
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                          <h3 className="text-xl font-medium text-black tracking-tight">AI 분석 요약</h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[13px] font-medium text-black/40">{t('insightNotifications')}</span>
+                          <Switch 
+                            className="data-[state=checked]:bg-black scale-90"
+                            checked={profile?.insightNotification}
+                            onCheckedChange={handleToggleNotification}
+                          />
+                        </div>
                       </div>
-                    </div>
                     <div className={cn(
                       "bg-white border border-border shadow-sm rounded-[32px] p-10 relative overflow-hidden group max-w-2xl",
                       isExample && "opacity-90"

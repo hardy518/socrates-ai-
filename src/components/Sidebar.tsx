@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-import { Plus, Trash2, MessageSquare, Menu, CheckCircle2, User, LogOut, Settings, MoreVertical, Pencil, Pin, PinOff, Check, X, CreditCard, Search, Star, History, Bookmark, LayoutDashboard, Headset, Share2 } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Menu, CheckCircle2, User, LogOut, Settings, MoreVertical, Pencil, Pin, PinOff, Check, X, CreditCard, Search, Star, History, Bookmark, LayoutDashboard, Headset, Share2, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatSession } from "@/types/chat";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,7 +51,7 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [showInsightBadge, setShowInsightBadge] = useState(false);
   const [isPro, setIsPro] = useState(false);
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
@@ -336,6 +336,34 @@ export function Sidebar({
                       <span>{t('upgradeToProLong')}</span>
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">{t('language')}</p>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setLanguage('ko'); }}
+                        className={cn(
+                          "flex-1 h-8 rounded-lg font-bold text-[11px] transition-all",
+                          language === 'ko' ? "bg-black text-white" : "text-black/40 hover:text-black hover:bg-black/5"
+                        )}
+                      >
+                        한국어
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setLanguage('en'); }}
+                        className={cn(
+                          "flex-1 h-8 rounded-lg font-bold text-[11px] transition-all",
+                          language === 'en' ? "bg-black text-white" : "text-black/40 hover:text-black hover:bg-black/5"
+                        )}
+                      >
+                        English
+                      </Button>
+                    </div>
+                  </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}

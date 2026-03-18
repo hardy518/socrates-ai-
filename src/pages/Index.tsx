@@ -20,8 +20,39 @@ import { UsageLimitCard } from "@/components/UsageLimitCard";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const CATEGORY_EXAMPLES: Record<string, { ko: string[]; en: string[] }> = {
+  "problem-solving": {
+    ko: ["어떤 문제에 부딪히고 있나요?", "어디서 막혔는지 알려주세요", "어떤 개념이 헷갈리시나요?"],
+    en: ["What problem are you facing?", "Where are you stuck?", "Which concept is confusing?"]
+  },
+  "idea-exploration": {
+    ko: ["어떤 아이디어를 검증하고 싶으신가요?", "사업 아이디어가 있으신가요?", "어떤 문제를 해결하고 싶으신가요?"],
+    en: ["What idea do you want to validate?", "Do you have a business idea?", "What problem do you want to solve?"]
+  },
+  "debate": {
+    ko: ["어떤 주제로 토론하고 싶으신가요?", "최근 고민하는 철학적 질문이 있나요?", "어떤 관점을 탐구해보고 싶으신가요?"],
+    en: ["What topic would you like to debate?", "Any philosophical questions on your mind?", "What perspective do you want to explore?"]
+  },
+  "self-development": {
+    ko: ["어떤 고민을 갖고 오셨나요?", "진로나 커리어에서 막히는 부분이 있나요?", "요즘 어떤 감정을 느끼고 계신가요?"],
+    en: ["What's on your mind?", "Any career or life path obstacles?", "What emotions are you feeling lately?"]
+  },
+  "language": {
+    ko: ["어떤 언어를 공부하고 계신가요?", "어떤 부분이 어려우신가요?", "어떤 표현을 익히고 싶으신가요?"],
+    en: ["What language are you studying?", "What parts are difficult?", "What expressions do you want to learn?"]
+  },
+  "creation": {
+    ko: ["어떤 작품을 만들고 있나요?", "어디서 막히셨나요?", "어떤 스타일을 추구하고 싶으신가요?"],
+    en: ["What are you creating?", "Where did you get stuck?", "What style are you aiming for?"]
+  },
+  "free-exploration": {
+    ko: ["어떤 이야기든 편하게 시작해보세요", "요즘 머릿속에 맴도는 게 있나요?", "뭘 모르는지 모르는 상태여도 괜찮아요"],
+    en: ["Feel free to start any story", "Anything lingering in your mind?", "It's okay if you don't know what you don't know"]
+  }
+};
+
 const Index = () => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -43,6 +74,7 @@ const Index = () => {
     togglePinSession,
     updateMessage,
     forkSession,
+    updateSessionProblem,
   } = useChatStorage();
 
   const { user } = useAuth();
@@ -130,7 +162,7 @@ const Index = () => {
         newSessionDepth = DEPTH_ANONYMOUS;
       }
 
-      const newSession = await createSession(form, newSessionDepth);
+      const newSession = await createSession(form, newSessionDepth, t('waitingForFirstMessage'));
       createdSessionId = newSession.id;
       setSearchParams({ session: createdSessionId }); // 🔥 세션 생성 직후 URL 즉시 업데이트
 
@@ -156,33 +188,49 @@ const Index = () => {
 예시: "이 문제가 맞나요? [문제 내용 요약]"`;
       } else {
         // 성장 모드
+        const examples = (CATEGORY_EXAMPLES[form.category] || CATEGORY_EXAMPLES["free-exploration"])[(language as 'ko' | 'en') || 'ko'];
         initialPrompt = `사용자가 다음과 같은 상황을 공유했습니다:
 
 카테고리: ${form.category}
-문제: ${form.problem}
+${form.problem ? `문제: ${form.problem}` : "주제에 대해 자유롭게 탐구를 시작하고 싶어합니다."}
 
-1. 가장 먼저 사용자의 질문을 분석하여 세션의 제목을 "TITLE: [제목]" 형식으로 첫 줄에 출력하세요.
-2. 그 다음 줄바꿈 후, 성장 모드(소크라테스식 대화)를 시작하기 위한 자연스럽고 친근한 첫 질문을 던져주세요.`;
+1. 사용자가 선택한 카테고리에 맞춰 친근한 인사와 함께 대화를 시작하기 위한 첫 질문을 한 문장으로 던져주세요.
+2. 그 다음 줄바꿈 후, "EXAMPLES:" 태그를 붙이고 아래의 예시 질문 3개를 번호를 매겨서 출력해주세요.
+
+예시 질문 리스트:
+${examples.map((ex, i) => `${i + 1}. ${ex}`).join('\n')}`;
       }
 
       const { generateAIResponse } = await import("@/lib/claude");
       const aiResponse = await generateAIResponse(newSession, initialPrompt, form.files);
 
-      // 제목 파싱 로직 (TITLE: [...])
+      // EXAMPLES: 파싱 로직
       let cleanResponse = aiResponse;
-      const titleMatch = aiResponse.match(/TITLE:\s*(.+)/);
+      let parsedExamples: string[] = [];
+      const examplesMatch = aiResponse.match(/EXAMPLES:\s*([\s\S]+)/);
 
-      if (titleMatch) {
-        const newTitle = titleMatch[1].trim();
-        console.log("🏷️ 감지된 제목:", newTitle);
-        await updateSessionTitle(createdSessionId, newTitle);
-
-        // 응답에서 TITLE: 라인과 그 뒤의 줄바꿈/구분선 제거
-        cleanResponse = aiResponse.replace(/TITLE:\s*.+(\n+---\n+)?/, '').trim();
+      if (examplesMatch) {
+        const examplesText = examplesMatch[1].trim();
+        parsedExamples = examplesText
+          .split('\n')
+          .map(line => line.replace(/^\d+\.\s*/, '').trim())
+          .filter(line => line.length > 0)
+          .slice(0, 3);
+        
+        cleanResponse = aiResponse.split(/EXAMPLES:/)[0].trim();
       }
 
-      // AI 응답 저장 (정제된 내용)
-      await addMessage(createdSessionId, { role: 'assistant', content: cleanResponse });
+      // 파싱 실패 시 폴백
+      if (parsedExamples.length === 0) {
+        parsedExamples = (CATEGORY_EXAMPLES[form.category] || CATEGORY_EXAMPLES["free-exploration"])[(language as 'ko' | 'en') || 'ko'];
+      }
+
+      // AI 응답 저장 (정제된 내용 및 예시 질문 포함)
+      await addMessage(createdSessionId, { 
+        role: 'assistant', 
+        content: cleanResponse,
+        examples: parsedExamples 
+      });
 
     } catch (err) {
       console.error("❌ 세션 생성 실패:", err);
@@ -270,6 +318,8 @@ const Index = () => {
               isInitialLoading={isCreatingSession}
               onMenuClick={() => setIsMobileSidebarOpen(true)}
               onFeedback={handleFeedback}
+              onUpdateTitle={updateSessionTitle}
+              onUpdateProblem={updateSessionProblem}
             />
           ) : (
             <div className="flex-1 flex flex-col min-w-0 bg-background relative overflow-y-auto h-full">
@@ -294,8 +344,8 @@ const Index = () => {
                 </Button>
               </div>
 
-              <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[15vh] px-6 min-h-[500px]">
-                <div className="max-w-2xl w-full">
+              <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[10vh] px-6 min-h-[500px]">
+                <div className="max-w-4xl w-full">
 
                   {canUse ? (
                     <QuestionForm

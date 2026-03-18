@@ -1,4 +1,4 @@
-import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, PinOff, Pencil, LogOut, User, LayoutDashboard, Headset, Share2 } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, PinOff, Pencil, LogOut, User, LayoutDashboard, Headset, Share2, Languages } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,7 @@ export function MobileSidebar({
   const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const [showInsightBadge, setShowInsightBadge] = useState(false);
   const [isPro, setIsPro] = useState(false);
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
 
   useEffect(() => {
     if (user && !user.isAnonymous) {
@@ -318,16 +318,44 @@ export function MobileSidebar({
                   <Settings className="w-4 h-4 mr-2" />
                   <span>{t('settings')}</span>
                 </DropdownMenuItem>
-                {!isPro && (
-                  <DropdownMenuItem
-                    onClick={() => navigate('/pricing')}
-                    className="cursor-pointer"
-                  >
-                    <Star className="w-4 h-4 mr-2 text-blue-600" />
-                    <span>{t('upgradeToProLong')}</span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
+                  {!isPro && (
+                    <DropdownMenuItem
+                      onClick={() => navigate('/pricing')}
+                      className="cursor-pointer"
+                    >
+                      <Star className="w-4 h-4 mr-2 text-blue-600" />
+                      <span>{t('upgradeToProLong')}</span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">{t('language')}</p>
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setLanguage('ko'); }}
+                        className={cn(
+                          "flex-1 h-8 rounded-lg font-bold text-[11px] transition-all",
+                          language === 'ko' ? "bg-black text-white" : "text-black/40 hover:text-black hover:bg-black/5"
+                        )}
+                      >
+                        한국어
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); setLanguage('en'); }}
+                        className={cn(
+                          "flex-1 h-8 rounded-lg font-bold text-[11px] transition-all",
+                          language === 'en' ? "bg-black text-white" : "text-black/40 hover:text-black hover:bg-black/5"
+                        )}
+                      >
+                        English
+                      </Button>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}
                   className="text-red-600 focus:text-red-600"
