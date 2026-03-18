@@ -19,6 +19,13 @@ const PaymentSuccess = () => {
     const billingKey = searchParams.get("billingKey"); // 리다이렉트 시 전달되는 빌링키
 
     useEffect(() => {
+        // billingKey를 읽는 즉시 URL에서 제거 (브라우저 히스토리 노출 방지)
+        if (billingKey) {
+            window.history.replaceState({}, '', '/payment-success');
+        }
+    }, []);
+
+    useEffect(() => {
         if (!user) return;
 
         // 1. 리다이렉트로 넘어온 빌링키 처리 (모바일 결제용)
