@@ -449,15 +449,16 @@ export function Sidebar({
                   <Settings className="w-4 h-4 text-muted-foreground" />
                   <span className="font-medium">{t('settings')}</span>
                 </DropdownMenuItem>
-                {!isPro && (
-                  <DropdownMenuItem
-                    onClick={() => navigate('/pricing')}
-                    className="cursor-pointer gap-3 p-3 rounded-xl text-primary font-bold"
-                  >
-                    <Star className="w-4 h-4 mr-2 text-blue-600" />
-                    <span>{t('upgradeToProLong')}</span>
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem
+                  onClick={() => navigate('/pricing')}
+                  className={cn(
+                    "cursor-pointer gap-3 p-3 rounded-xl font-bold",
+                    isPro ? "text-muted-foreground" : "text-primary"
+                  )}
+                >
+                  {isPro ? <CreditCard className="w-4 h-4 mr-2" /> : <Star className="w-4 h-4 mr-2 text-blue-600" />}
+                  <span>{t('upgradeToProLong')}</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleSignOut}

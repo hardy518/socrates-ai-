@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { checkIsPro } from "@/utils/subscription";
+import { checkIsPro, getSubscription } from "@/utils/subscription";
 import { toast } from "sonner";
-import { setProPlan } from "@/utils/subscription";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 declare global {
@@ -17,6 +16,7 @@ const Pricing = () => {
     const { t } = useLanguage();
     const navigate = useNavigate();
     const [isPro, setIsPro] = useState(false);
+    const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
 
@@ -24,8 +24,12 @@ const Pricing = () => {
         const fetchSubscription = async () => {
             if (user && !user.isAnonymous) {
                 try {
-                    const proStatus = await checkIsPro(user.uid);
+                    const [proStatus, sub] = await Promise.all([
+                        checkIsPro(user.uid),
+                        getSubscription(user.uid),
+                    ]);
                     setIsPro(proStatus);
+                    setSubscriptionStatus(sub?.status ?? null);
                 } catch (error) {
                     console.error("Error checking pro status:", error);
                 }
@@ -72,7 +76,7 @@ const Pricing = () => {
             return;
         }
 
-        if (isPro) {
+        if (isPro && subscriptionStatus === 'active') {
             toast.info(t('alreadyPro'));
             setTimeout(() => navigate("/"), 500);
             return;
@@ -80,9 +84,13 @@ const Pricing = () => {
 
         try {
             // Re-verify status just before showing payment window for maximum safety
-            const currentProStatus = await checkIsPro(user.uid);
-            if (currentProStatus) {
+            const [currentProStatus, currentSub] = await Promise.all([
+                checkIsPro(user.uid),
+                getSubscription(user.uid),
+            ]);
+            if (currentProStatus && currentSub?.status === 'active') {
                 setIsPro(true);
+                setSubscriptionStatus('active');
                 toast.info(t('alreadyPro'));
                 setTimeout(() => navigate("/"), 500);
                 return;
@@ -210,7 +218,7 @@ const Pricing = () => {
 
                     {/* Pro Plan */}
                     <div className={`flex-1 max-w-[300px] p-8 rounded-[2rem] bg-white dark:bg-slate-900 border-2 border-primary flex flex-col relative shadow-[0_24px_48px_-8px_rgba(66,133,244,0.18)]`}>
-                        {isPro ? (
+                        {isPro && subscriptionStatus === 'active' ? (
                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 text-xs font-bold rounded-full shadow-lg shadow-primary/40">
                                 {t('currentlyUsing')}
                             </div>
@@ -237,10 +245,10 @@ const Pricing = () => {
                         </ul>
                         <button
                             onClick={handleProPlan}
-                            disabled={isPro}
+                            disabled={isPro && subscriptionStatus === 'active'}
                             className="w-full py-3 rounded-xl bg-primary text-white font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
-                            {isPro ? t('subscribed') : t('startPro')}
+                            {isPro && subscriptionStatus === 'active' ? t('subscribed') : t('startPro')}
                         </button>
                     </div>
 

@@ -162,7 +162,8 @@ export const handler: Handler = async (event) => {
                                     paymentId: nextScheduleId,
                                     billingKey: billingKey,
                                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
-                                    amount: { total: 7500, currency: "KRW" },
+                                    currency: "KRW",
+                                    amount: { total: 7500 },
                                     timeToPay: endDate.toISOString(),
                                     customData: customerId,
                                 }],
@@ -228,7 +229,8 @@ export const handler: Handler = async (event) => {
 
                 // usage는 즉시 리셋하지 않음 — endDate 이후 자연스럽게 Free로 전환됨
 
-                await sendSlackMessage(`구독 취소 - userId: ${customerId}`);
+                const cancelledEmail = data?.customer?.email || customerId;
+                await sendSlackMessage(`🚫 구독 취소: [${cancelledEmail}] | ${new Date().toLocaleString('ko-KR')}`);
                 break;
             }
 

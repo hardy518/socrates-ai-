@@ -87,29 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
       }
 
-      // 🔥 신규 가입 알림 (슬랙)
-      const slackUrl = import.meta.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
-      if (slackUrl && isNewUser) {
-        try {
-          const now = new Date().toLocaleString('ko-KR', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-          });
-          await fetch(slackUrl, {
-            method: "POST",
-            body: JSON.stringify({
-              text: `🎉 신규 가입: [${firebaseUser.email}] | Google | ${now}`
-            }),
-          });
-        } catch (slackError) {
-          console.error("슬랙 알림 보내기 실패:", slackError);
-        }
+      if (isNewUser) {
+        const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+        fetch(`${API_BASE_URL}/.netlify/functions/notifyNewUser`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+          }),
+        }).catch(() => {});
       }
+
     } catch (error: any) {
       console.error("로그인 실패:", error);
       if (Capacitor.isNativePlatform()) {

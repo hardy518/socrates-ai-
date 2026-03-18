@@ -154,7 +154,8 @@ export const handler: Handler = async (event) => {
                     paymentId: scheduleId,
                     billingKey: billingKey,
                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
-                    amount: { total: 7500, currency: "KRW" },
+                    currency: "KRW",
+                    amount: { total: 7500 },
                     timeToPay: nextMonth.toISOString(),
                     customData: userId,
                 }],
@@ -175,7 +176,7 @@ export const handler: Handler = async (event) => {
             if (slackUrl) {
                 await fetch(slackUrl, {
                     method: 'POST',
-                    body: JSON.stringify({ text: `⚠️ 정기 결제 스케줄 생성 실패 - userId: ${userId} | scheduleId: ${scheduleId} | 확인 필요` }),
+                    body: JSON.stringify({ text: `⚠️ 스케줄 생성 실패: [${userEmail || userId}] | scheduleId: ${scheduleId} | ${new Date().toLocaleString('ko-KR')} | 다음 달 결제 누락 가능` }),
                 }).catch(() => {});
             }
         }
