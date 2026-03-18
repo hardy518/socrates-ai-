@@ -5,7 +5,8 @@ import {
   signInAnonymously,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
-  signInWithCredential
+  signInWithCredential,
+  getAdditionalUserInfo
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Capacitor } from "@capacitor/core";
@@ -63,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       let firebaseUser: User;
 
+      let isNewUser = false;
+
       if (Capacitor.isNativePlatform()) {
         console.log("📱 모바일 네이티브 로그인 시작...");
         const googleUser = await GoogleAuth.signIn();
@@ -76,15 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("🔗 Firebase Credential 생성 완료, 로그인 시도...");
         const result = await signInWithCredential(auth, credential);
         firebaseUser = result.user;
+        isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
         console.log("🎉 Firebase 로그인 성공:", firebaseUser.email);
       } else {
         const result = await signInWithPopup(auth, googleProvider);
         firebaseUser = result.user;
+        isNewUser = getAdditionalUserInfo(result)?.isNewUser ?? false;
       }
 
       // 🔥 신규 가입 알림 (슬랙)
       const slackUrl = import.meta.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
-      if (slackUrl && (firebaseUser as any)._tokenResponse?.isNewUser) {
+      if (slackUrl && isNewUser) {
         try {
           const now = new Date().toLocaleString('ko-KR', {
             year: 'numeric',

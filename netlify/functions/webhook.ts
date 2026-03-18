@@ -162,7 +162,7 @@ export const handler: Handler = async (event) => {
                                     paymentId: nextScheduleId,
                                     billingKey: billingKey,
                                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
-                                    amount: { total: 7000, currency: "KRW" },
+                                    amount: { total: 7500, currency: "KRW" },
                                     timeToPay: endDate.toISOString(),
                                     customData: customerId,
                                 }],
@@ -209,15 +209,15 @@ export const handler: Handler = async (event) => {
             case "Transaction.Cancelled": {
                 const now = timestamp.now();
 
-                // Update sub-collection (original logic + userId request)
+                // plan은 'pro' 유지 — endDate까지 Pro 혜택 보장
+                // checkIsPro에서 status === 'cancelled' && endDate > now 이면 Pro로 인정
                 await subRef.set({
                     status: 'cancelled',
-                    plan: 'free',
                     cancelledAt: now,
                     updatedAt: now
                 }, { merge: true });
 
-                // Update top-level user doc as requested
+                // Update top-level user doc
                 await userRef.set({
                     subscription: {
                         status: 'cancelled',
@@ -226,19 +226,8 @@ export const handler: Handler = async (event) => {
                     updatedAt: now
                 }, { merge: true });
 
-                // Reset usage to free limits
-                const tomorrow = new Date();
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                tomorrow.setHours(0, 0, 0, 0);
+                // usage는 즉시 리셋하지 않음 — endDate 이후 자연스럽게 Free로 전환됨
 
-                await usageRef.set({
-                    limit: 5,
-                    count: 0,
-                    resetAt: timestamp.fromDate(tomorrow),
-                    updatedAt: now
-                }, { merge: true });
-
-                // Slack alert text as requested
                 await sendSlackMessage(`구독 취소 - userId: ${customerId}`);
                 break;
             }

@@ -141,30 +141,27 @@ export const handler: Handler = async (event) => {
             nextScheduledAt: nextScheduledAt,
         });
 
-        // 3. Schedule next payment
+        // 3. Schedule next payment (V2 /payments-schedule)
         const scheduleId = `schedule_${userId}_${nextMonth.getTime()}`;
-        const scheduleResponse = await fetch(`https://api.portone.io/payments/${encodeURIComponent(scheduleId)}/schedule`, {
+        const scheduleResponse = await fetch(`https://api.portone.io/payments-schedule`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `PortOne ${apiSecret}`,
             },
             body: JSON.stringify({
-                payment: {
+                schedules: [{
+                    paymentId: scheduleId,
                     billingKey: billingKey,
                     orderName: "소크라테스 AI Pro 정기구독 (정기 결제)",
-                    currency: "KRW",
-                    amount: { total: 7500 },
-                    customer: { id: userId },
+                    amount: { total: 7500, currency: "KRW" },
+                    timeToPay: nextMonth.toISOString(),
                     customData: userId,
-                },
-                timeToPay: nextMonth.toISOString(),
+                }],
             }),
         });
 
         const scheduleText = await scheduleResponse.text();
-        console.log("Schedule status:", scheduleResponse.status);
-        console.log("Schedule response:", scheduleText);
         let scheduleResult = {};
         try {
             scheduleResult = (scheduleText && scheduleText.trim()) ? JSON.parse(scheduleText) : {};
@@ -173,6 +170,14 @@ export const handler: Handler = async (event) => {
         }
         if (!scheduleResponse.ok) {
             console.error("Scheduling failed:", scheduleResult);
+            // Slack 알림 - 스케줄 실패는 다음 달 결제 누락으로 이어질 수 있음
+            const slackUrl = process.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
+            if (slackUrl) {
+                await fetch(slackUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ text: `⚠️ 정기 결제 스케줄 생성 실패 - userId: ${userId} | scheduleId: ${scheduleId} | 확인 필요` }),
+                }).catch(() => {});
+            }
         }
 
         return {

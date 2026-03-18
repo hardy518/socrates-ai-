@@ -99,7 +99,20 @@ ${JSON.stringify(conversations, null, 2)}
     });
 
     const resultText = msg.content[0].type === 'text' ? msg.content[0].text : '';
-    const insightData = JSON.parse(resultText);
+
+    let insightData;
+    try {
+      // Claude가 JSON 외 텍스트를 포함할 경우를 대비해 JSON 블록만 추출
+      const jsonMatch = resultText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON found in response');
+      insightData = JSON.parse(jsonMatch[0]);
+    } catch (parseError) {
+      console.error('Failed to parse insight JSON:', resultText);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: 'AI 응답 파싱 실패' })
+      };
+    }
 
     // 4. Save insight to Firestore
     await userRef.update({
