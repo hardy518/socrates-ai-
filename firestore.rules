@@ -21,6 +21,12 @@ service cloud.firestore {
       }
     }
     
+    // Conversations (chat sessions)
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

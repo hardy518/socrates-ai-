@@ -20,7 +20,7 @@ export interface UsageData {
 }
 
 export function useUsageLimit() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [shortTermUsage, setShortTermUsage] = useState<UsageData | null>(null);
   const [longTermUsage, setLongTermUsage] = useState<UsageData | null>(null);
@@ -73,7 +73,8 @@ export function useUsageLimit() {
 
   const checkUsage = async () => {
     if (!user) {
-      setIsLoading(false);
+      // auth가 아직 로딩 중이면 대기 — 익명 로그인 완료 후 다시 호출됨
+      if (!authLoading) setIsLoading(false);
       return;
     }
 
@@ -203,7 +204,7 @@ export function useUsageLimit() {
 
   useEffect(() => {
     checkUsage();
-  }, [user]);
+  }, [user, authLoading]);
 
   return {
     isLoading,
