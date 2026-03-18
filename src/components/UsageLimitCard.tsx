@@ -51,18 +51,14 @@ export function UsageLimitCard() {
   const isAnonymous = user?.isAnonymous;
 
   return (
-    <div className="w-full bg-background/95 backdrop-blur-sm border border-black/10 rounded-2xl p-6 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-          <span className="material-icons text-2xl text-primary">auto_awesome</span>
-        </div>
-        
-        <div className="text-center space-y-2">
-          <h3 className="font-bold text-lg text-foreground">
+    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col items-center gap-2">
+        <div className="text-center space-y-1">
+          <h3 className="font-bold text-sm text-foreground">
             {t('usageLimitReached')}
           </h3>
-          <p className="text-base font-medium text-foreground leading-relaxed">
-            {isPro 
+          <p className="text-xs font-medium text-orange-500 leading-relaxed">
+            {isPro
               ? t('proLimitReached').replace('{resetTime}', getResetTimeText())
               : isAnonymous
                 ? t('anonymousLimitReached')
@@ -71,7 +67,7 @@ export function UsageLimitCard() {
           </p>
         </div>
 
-        <div className="flex gap-2 w-full max-w-sm mt-2">
+        <div className="flex gap-2 w-full max-w-sm mt-1">
           {isAnonymous ? (
             <Button
               onClick={handleLogin}

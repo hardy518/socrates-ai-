@@ -133,7 +133,7 @@ const Index = () => {
                 label: "보기",
                 onClick: () => navigate("/my-insight")
               },
-              style: { 
+              style: {
                 backgroundColor: '#8B5CF6',
                 color: 'white',
                 border: 'none'
@@ -217,7 +217,7 @@ ${examples.map((ex, i) => `${i + 1}. ${ex}`).join('\n')}`;
           .map(line => line.replace(/^\d+\.\s*/, '').trim())
           .filter(line => line.length > 0)
           .slice(0, 3);
-        
+
         cleanResponse = aiResponse.split(/EXAMPLES:/)[0].trim();
       }
 
@@ -227,10 +227,10 @@ ${examples.map((ex, i) => `${i + 1}. ${ex}`).join('\n')}`;
       }
 
       // AI 응답 저장 (정제된 내용 및 예시 질문 포함)
-      await addMessage(createdSessionId, { 
-        role: 'assistant', 
+      await addMessage(createdSessionId, {
+        role: 'assistant',
         content: cleanResponse,
-        examples: parsedExamples 
+        examples: parsedExamples
       });
 
     } catch (err) {
@@ -350,7 +350,7 @@ ${examples.map((ex, i) => `${i + 1}. ${ex}`).join('\n')}`;
                   {/* Greeting Message - Always visible at the top */}
                   <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out fill-mode-both flex flex-row items-center justify-center gap-4 text-left mb-8">
                     <img src={logoImage} alt="Socrates AI Logo" className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl shadow-md animate-in zoom-in-50 duration-1000" />
-                    <h1 className="text-2xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
+                    <h1 className="text-2xl sm:text-4xl text-foreground tracking-tight leading-tight">
                       {t('exploreToday')}
                     </h1>
                   </div>
