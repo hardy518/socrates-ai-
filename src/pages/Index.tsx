@@ -80,7 +80,7 @@ const Index = () => {
 
   const { user } = useAuth();
 
-  const { canUse, isPro, checkAndIncrementUsage } = useUsageLimit();
+  const { canUse, isPro, isLoading: isUsageLoading, checkAndIncrementUsage } = useUsageLimit();
 
   // Load settings from user profile
   useEffect(() => {
@@ -348,14 +348,14 @@ ${examples.map((ex, i) => `${i + 1}. ${ex}`).join('\n')}`;
               <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[10vh] px-6 min-h-[500px]">
                 <div className="max-w-4xl w-full">
                   {/* Greeting Message - Always visible at the top */}
-                  <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out fill-mode-both flex flex-row items-center justify-center gap-4 text-left mb-8">
+                  <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out fill-mode-both flex flex-row items-center justify-center gap-4 text-left mb-4">
                     <img src={logoImage} alt="Socrates AI Logo" className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl shadow-md animate-in zoom-in-50 duration-1000" />
                     <h1 className="text-2xl sm:text-4xl text-foreground tracking-tight leading-tight">
                       {t('exploreToday')}
                     </h1>
                   </div>
 
-                  {!canUse && <div className="mb-10"><UsageLimitCard /></div>}
+                  {!isUsageLoading && !canUse && <div className="mb-4"><UsageLimitCard /></div>}
                   <QuestionForm
                     onSubmit={handleCreateSession}
                     initialProblem={searchParams.get('problem') || ""}

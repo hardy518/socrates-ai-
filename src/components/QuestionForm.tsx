@@ -97,7 +97,7 @@ export function QuestionForm({
   };
 
   return (
-    <div className="space-y-10 w-full max-w-4xl mx-auto px-4 py-8">
+    <div className="space-y-4 w-full max-w-4xl mx-auto px-4 py-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {CATEGORIES_DATA.map((card, index) => {
           const Icon = card.icon;
@@ -109,7 +109,7 @@ export function QuestionForm({
               disabled={false} // We handle disabled state in handleCategoryClick for the toast
               className={cn(
                 "group relative flex flex-col p-4 sm:p-5 bg-white border border-border rounded-2xl text-left transition-all duration-300 animate-in fade-in slide-in-from-bottom-8 zoom-in-95 duration-700 fill-mode-both shadow-sm",
-                disabled ? "opacity-60 cursor-default" : "hover:border-primary/50 hover:shadow-lg active:scale-[0.98]"
+                !disabled && "hover:border-primary/50 hover:shadow-lg active:scale-[0.98]"
               )}
               style={{ animationDelay: `${(index + 1) * 150}ms` }}
             >

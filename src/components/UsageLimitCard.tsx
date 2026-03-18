@@ -54,10 +54,10 @@ export function UsageLimitCard() {
     <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col items-center gap-2">
         <div className="text-center space-y-1">
-          <h3 className="font-bold text-sm text-foreground">
+          <h3 className="font-bold text-base text-foreground">
             {t('usageLimitReached')}
           </h3>
-          <p className="text-xs font-medium text-orange-500 leading-relaxed">
+          <p className="text-sm font-medium text-orange-500 leading-relaxed">
             {isPro
               ? t('proLimitReached').replace('{resetTime}', getResetTimeText())
               : isAnonymous
