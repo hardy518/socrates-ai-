@@ -20,7 +20,8 @@ import {
   Sparkles,
   ArrowUpRight,
   ShieldAlert,
-  Info
+  Info,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -306,6 +307,67 @@ const Settings = () => {
     }
   };
 
+  const handleResubscribe = async () => {
+    if (!user) return;
+    try {
+      const customerId = user.uid;
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const redirectUrl = `${window.location.origin}/payment-success`;
+
+      const response = await window.PortOne.requestIssueBillingKey({
+        storeId: import.meta.env.VITE_PORTONE_STORE_ID,
+        channelKey: import.meta.env.VITE_PORTONE_CHANNEL_KEY,
+        issueId: crypto.randomUUID(),
+        billingKeyMethod: "CARD",
+        issueName: t('paymentNamePro'),
+        offerPeriod: {
+          interval: "1m",
+        },
+        redirectUrl: isMobileDevice ? redirectUrl : undefined,
+        customer: {
+          id: customerId,
+          fullName: user?.displayName || "User",
+          email: user.email || undefined,
+          phoneNumber: import.meta.env.VITE_TEST_PHONE_NUMBER || "01000000000",
+        },
+      });
+
+      if (isMobileDevice) return;
+
+      if (response.code !== undefined) {
+        toast.error(t('paymentPrepError').replace('{message}', response.message));
+        return;
+      }
+
+      const { billingKey } = response;
+      const subscribeResponse = await fetch('/.netlify/functions/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          billingKey: billingKey,
+          userName: user.displayName || t('anonymousUser'),
+          userEmail: user.email || "",
+          userPhone: "010-0000-0000",
+        }),
+      });
+
+      if (subscribeResponse.ok) {
+        toast.success(t('subscriptionStarted'));
+        const subData = await getSubscription(user.uid);
+        setSubscription(subData);
+      } else {
+        const result = await subscribeResponse.json();
+        toast.error(t('subscriptionError').replace('{message}', result.message));
+      }
+    } catch (error) {
+      console.error("Resubscribe failed:", error);
+      toast.error(t('unexpectedPaymentError'));
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -314,7 +376,20 @@ const Settings = () => {
     );
   }
 
-  const isPro = subscription?.status === 'active';
+  const isPro = subscription?.plan === 'pro' && (
+    subscription.status === 'active' || 
+    (subscription.status === 'cancelled' && subscription.endDate && subscription.endDate.seconds > Date.now() / 1000)
+  );
+
+  const formatFullDate = (timestamp: any) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate();
+    return date.toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', { 
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    });
+  };
 
   const formatResetDate = (timestamp: any) => {
     if (!timestamp) return "";
@@ -493,12 +568,35 @@ const Settings = () => {
                       </div>
 
                       {isPro ? (
-                        <div className="py-4 border-t border-border/50 max-w-2xl">
-                          <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest mb-2">{t('nextBillingDate')}</p>
-                          <p className="text-lg font-medium text-black">
-                            {subscription?.nextScheduledAt ? subscription.nextScheduledAt.toDate().toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', { year:'numeric', month:'long', day:'numeric' }) : "-"}
-                          </p>
-                        </div>
+                        <>
+                          {subscription?.status === 'active' && (
+                            <div className="py-4 border-t border-border/50 max-w-2xl">
+                              <p className="text-[11px] font-bold text-black/40 uppercase tracking-widest mb-2">{t('nextBillingDate')}</p>
+                              <p className="text-lg font-medium text-black">
+                                {subscription?.nextScheduledAt ? subscription.nextScheduledAt.toDate().toLocaleDateString(language === 'ko' ? 'ko-KR' : 'en-US', { year:'numeric', month:'long', day:'numeric' }) : "-"}
+                              </p>
+                            </div>
+                          )}
+                          {subscription?.status === 'cancelled' && (
+                            <div className="mt-4 space-y-4 max-w-2xl">
+                              <div className="p-4 rounded-2xl bg-orange-50 border border-orange-100 flex items-start gap-3">
+                                <Info className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
+                                <p className="text-sm font-medium text-orange-800 leading-relaxed">
+                                  {t('subCancelledNotice').replace('{date}', formatFullDate(subscription.endDate))}
+                                </p>
+                              </div>
+                              {subscription.endDate && subscription.endDate.seconds > Date.now() / 1000 && (
+                                <Button 
+                                  onClick={handleResubscribe}
+                                  className="w-full h-12 rounded-xl bg-black text-white font-bold text-sm hover:bg-black/90 transition-all flex items-center justify-center gap-2"
+                                >
+                                  {t('resubscribe')}
+                                  <Plus className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <Button 
                           onClick={() => navigate('/pricing')}
@@ -507,6 +605,25 @@ const Settings = () => {
                           {t('upgradeToPro')}
                           <Sparkles className="w-4 h-4 fill-white" />
                         </Button>
+                      )}
+
+                      {/* Payment Failure Notice for Inactive status */}
+                      {subscription?.status === 'inactive' && (
+                        <div className="p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3 max-w-2xl">
+                          <ShieldAlert className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium text-red-800 leading-relaxed">
+                              {t('paymentFailedNotice')}
+                            </p>
+                            <Button 
+                              onClick={handleUpdateCard}
+                              variant="outline"
+                              className="h-10 border-red-200 text-red-700 hover:bg-red-100 hover:text-red-800 transition-all text-xs font-bold"
+                            >
+                              {t('updatePaymentMethod')}
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -532,7 +649,7 @@ const Settings = () => {
                           )}
                         </div>
                       </div>
-                      {isPro && (
+                      {(isPro || subscription?.status === 'inactive') && (
                         <Button 
                           onClick={handleUpdateCard} 
                           variant="link" 
@@ -542,6 +659,18 @@ const Settings = () => {
                         </Button>
                       )}
                     </div>
+
+                    {isPro && subscription?.status === 'active' && (
+                      <div className="pt-8 border-t border-border/50">
+                        <button 
+                          onClick={() => setCancelModalOpen(true)}
+                          className="text-sm font-medium text-black/40 hover:text-red-500 transition-colors flex items-center gap-2 group"
+                        >
+                          <X className="w-4 h-4" />
+                          {t('cancelSubscription')}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-8">
@@ -553,8 +682,7 @@ const Settings = () => {
                           <tr className="text-[14px] text-black font-medium border-b border-transparent">
                             <th className="pb-6 font-medium">{t('date')}</th>
                             <th className="pb-6 font-medium">{t('total')}</th>
-                            <th className="pb-6 font-medium">{t('status')}</th>
-                            <th className="pb-6 font-medium text-right">{t('actions')}</th>
+                            <th className="pb-6 font-medium text-right">{t('status')}</th>
                           </tr>
                         </thead>
                         <tbody className="text-[15px]">
@@ -570,19 +698,14 @@ const Settings = () => {
                                     <Info className="w-3.5 h-3.5 text-black/30 hover:text-black/60 cursor-help transition-colors" />
                                   </div>
                                 </td>
-                                <td className="py-4 text-black">
-                                  {payment.status === 'succeeded' ? t('paid') : payment.status}
-                                </td>
                                 <td className="py-4 text-right">
-                                  <button className="text-black font-medium underline underline-offset-4 hover:text-primary transition-all">
-                                    {t('view')}
-                                  </button>
+                                  {payment.status === 'succeeded' ? t('paid') : payment.status}
                                 </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={4} className="py-12 text-center text-muted-foreground font-medium italic">
+                              <td colSpan={3} className="py-12 text-center text-muted-foreground font-medium italic">
                                 {t('noHistory')}
                               </td>
                             </tr>
@@ -591,17 +714,6 @@ const Settings = () => {
                       </table>
                     </div>
                   </div>
-
-                  {isPro && (
-                    <div className="pt-4 px-4">
-                      <button 
-                        onClick={() => setCancelModalOpen(true)}
-                        className="text-[13px] font-bold text-destructive/70 hover:text-destructive hover:underline underline-offset-4 transition-all"
-                      >
-                        {t('cancelSubscription')}
-                      </button>
-                    </div>
-                  )}
                 </section>
 
 
@@ -645,22 +757,27 @@ const Settings = () => {
 
                       <div className="pt-2">
                         <Button 
-                          disabled={isPro}
-                          variant="ghost" 
+                          variant="ghost"
+                          disabled={subscription?.status === 'active'}
+                          className={cn(
+                            "h-auto p-4 rounded-xl flex items-center justify-between group transition-all",
+                            subscription?.status === 'active' ? "opacity-50 cursor-not-allowed" : "hover:bg-red-50 dark:hover:bg-red-950/20"
+                          )}
                           onClick={() => setDeleteModalOpen(true)}
-                          className="w-full h-16 rounded-[24px] justify-between px-8 text-destructive/80 hover:text-destructive hover:bg-destructive/5 transition-all group"
                         >
-                          <div className="flex items-center gap-4">
-                            <UserX className="w-5 h-5" />
-                            <span className="font-bold">{t('deleteAccount')}</span>
+                          <div className="text-left">
+                            <p className={cn(
+                              "font-medium transition-colors",
+                              subscription?.status === 'active' ? "text-muted-foreground" : "text-red-600 group-hover:text-red-700"
+                            )}>
+                              {t('withdraw')}
+                            </p>
+                            {subscription?.status === 'active' && (
+                              <p className="text-xs text-muted-foreground mt-1">{t('proDeleteNotice')}</p>
+                            )}
                           </div>
-                          <ChevronRight className="w-5 h-5 text-destructive/20" />
+                          <ChevronRight className="w-5 h-5 text-red-600/20" />
                         </Button>
-                        {isPro && (
-                          <p className="text-[13px] text-black/40 font-medium px-8 mt-4 leading-relaxed bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50">
-                            {t('proDeleteNotice')}
-                          </p>
-                        )}
                       </div>
                     </div>
                   </div>

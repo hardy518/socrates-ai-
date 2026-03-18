@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { UsageLimitCard } from "@/components/UsageLimitCard";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logoImage from "@/assets/logo.png";
 
 const CATEGORY_EXAMPLES: Record<string, { ko: string[]; en: string[] }> = {
   "problem-solving": {
@@ -346,15 +347,20 @@ ${examples.map((ex, i) => `${i + 1}. ${ex}`).join('\n')}`;
 
               <div className="flex-1 flex flex-col items-center pt-[5vh] sm:pt-[10vh] px-6 min-h-[500px]">
                 <div className="max-w-4xl w-full">
+                  {/* Greeting Message - Always visible at the top */}
+                  <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out fill-mode-both flex flex-row items-center justify-center gap-4 text-left mb-8">
+                    <img src={logoImage} alt="Socrates AI Logo" className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl shadow-md animate-in zoom-in-50 duration-1000" />
+                    <h1 className="text-2xl sm:text-4xl font-bold text-foreground tracking-tight leading-tight">
+                      {t('exploreToday')}
+                    </h1>
+                  </div>
 
-                  {canUse ? (
-                    <QuestionForm
-                      onSubmit={handleCreateSession}
-                      initialProblem={searchParams.get('problem') || ""}
-                    />
-                  ) : (
-                    <UsageLimitCard />
-                  )}
+                  {!canUse && <div className="mb-10"><UsageLimitCard /></div>}
+                  <QuestionForm
+                    onSubmit={handleCreateSession}
+                    initialProblem={searchParams.get('problem') || ""}
+                    disabled={!canUse}
+                  />
                 </div>
               </div>
             </div>

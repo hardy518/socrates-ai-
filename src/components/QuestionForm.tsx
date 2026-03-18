@@ -7,6 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface QuestionFormProps {
   onSubmit: (form: QuestionFormType, depth: number) => void;
   initialProblem?: string;
+  disabled?: boolean;
 }
 
 const CATEGORIES_DATA = [
@@ -77,11 +78,18 @@ const CATEGORIES_DATA = [
 
 export function QuestionForm({
   onSubmit,
-  initialProblem
+  initialProblem,
+  disabled = false
 }: QuestionFormProps) {
   const { language, t } = useLanguage();
 
   const handleCategoryClick = (id: Category) => {
+    if (disabled) {
+      import("sonner").then(({ toast }) => {
+        toast.info(t('usageLimitReached'));
+      });
+      return;
+    }
     onSubmit({
       category: id,
       problem: initialProblem || "",
@@ -90,14 +98,6 @@ export function QuestionForm({
 
   return (
     <div className="space-y-10 w-full max-w-4xl mx-auto px-4 py-8">
-      {/* Greeting Message */}
-      <div className="animate-in fade-in slide-in-from-bottom-6 duration-1000 ease-out fill-mode-both flex flex-col items-center gap-4 text-center">
-        <img src={logoImage} alt="Socrates AI Logo" className="w-14 h-14 rounded-2xl shadow-md mb-2 animate-in zoom-in-50 duration-1000" />
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight max-w-2xl leading-tight">
-          {t('exploreToday')}
-        </h1>
-      </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         {CATEGORIES_DATA.map((card, index) => {
           const Icon = card.icon;
@@ -106,7 +106,11 @@ export function QuestionForm({
             <button
               key={card.id}
               onClick={() => handleCategoryClick(card.id)}
-              className="group relative flex flex-col p-4 sm:p-5 bg-white border border-border rounded-2xl text-left transition-all duration-300 hover:border-primary/50 hover:shadow-lg active:scale-[0.98] animate-in fade-in slide-in-from-bottom-8 zoom-in-95 duration-700 fill-mode-both shadow-sm"
+              disabled={false} // We handle disabled state in handleCategoryClick for the toast
+              className={cn(
+                "group relative flex flex-col p-4 sm:p-5 bg-white border border-border rounded-2xl text-left transition-all duration-300 animate-in fade-in slide-in-from-bottom-8 zoom-in-95 duration-700 fill-mode-both shadow-sm",
+                disabled ? "opacity-60 cursor-default" : "hover:border-primary/50 hover:shadow-lg active:scale-[0.98]"
+              )}
               style={{ animationDelay: `${(index + 1) * 150}ms` }}
             >
               {/* Top Row: Icon + Title */}

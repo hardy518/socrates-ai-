@@ -61,7 +61,7 @@ export function UsageLimitCard() {
           <h3 className="font-bold text-lg text-foreground">
             {t('usageLimitReached')}
           </h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-base font-medium text-foreground leading-relaxed">
             {isPro 
               ? t('proLimitReached').replace('{resetTime}', getResetTimeText())
               : isAnonymous
@@ -86,15 +86,7 @@ export function UsageLimitCard() {
             >
               {t('upgradeToProAction')}
             </Button>
-          ) : (
-             <Button
-              variant="outline"
-              disabled
-              className="w-full h-11 rounded-xl font-bold opacity-50 border-black/10"
-            >
-              차주 리셋 대기 중
-            </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

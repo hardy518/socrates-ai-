@@ -17,13 +17,13 @@ const LegalPages = () => {
       let pageTitle = "";
 
       if (location.pathname === "/settings/terms") {
-        url = "https://socrates-ai.co.kr/terms";
+        url = "/legal/terms.md";
         pageTitle = "서비스 이용약관";
       } else if (location.pathname === "/settings/privacy") {
-        url = "https://socrates-ai.co.kr/privacy";
+        url = "/legal/privacy.md";
         pageTitle = "개인정보처리방침";
       } else if (location.pathname === "/settings/refund") {
-        url = "https://socrates-ai.co.kr/refund-policy";
+        url = "/legal/refund.md";
         pageTitle = "취소 및 환불 규정";
       }
 

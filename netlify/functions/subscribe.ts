@@ -53,6 +53,20 @@ export const handler: Handler = async (event) => {
     console.log(`Processing subscription for user: ${userId}, billingKey: ${billingKey}`);
 
     try {
+        // 0. Check for existing active subscription
+        const subDoc = await db.collection("users").doc(userId).collection("subscription").doc("current").get();
+        if (subDoc.exists) {
+            const currentSub = subDoc.data();
+            if (currentSub?.status === "active" && currentSub?.plan === "pro") {
+                console.log(`User ${userId} already has an active Pro subscription. Blocking re-subscribe attempt.`);
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ message: "이미 Pro 멤버십을 구독 중입니다. 중복 결제를 할 수 없습니다." })
+                };
+            }
+        }
+
         // 1. Process initial payment (₩7,500)
         const paymentId = `initial_${userId}_${Date.now()}`;
         const payResponse = await fetch(`https://api.portone.io/payments/${paymentId}/billing-key`, {
@@ -99,7 +113,21 @@ export const handler: Handler = async (event) => {
 
         // 2. Save billing key and subscription info to Firestore
         const now = admin.firestore.Timestamp.now();
-        const nextMonth = new Date();
+        let nextMonth = new Date();
+        
+        // 2.1 Check if we should extend from an existing endDate (Resubscribe case)
+        const existingSubDoc = await db.collection("users").doc(userId).collection("subscription").doc("current").get();
+        if (existingSubDoc.exists) {
+            const data = existingSubDoc.data();
+            if (data?.status === "cancelled" && data?.endDate) {
+                const existingEndDate = data.endDate.toDate();
+                if (existingEndDate > now.toDate()) {
+                    console.log(`Resubscribe detected for user ${userId}. Extending from ${existingEndDate.toISOString()}`);
+                    nextMonth = new Date(existingEndDate);
+                }
+            }
+        }
+        
         nextMonth.setMonth(nextMonth.getMonth() + 1);
         const nextScheduledAt = admin.firestore.Timestamp.fromDate(nextMonth);
 

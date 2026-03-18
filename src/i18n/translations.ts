@@ -100,7 +100,7 @@ export const translations = {
         resets: "초기화: {date}",
         nextBillingDate: "다음 결제일",
         upgradeToPro: "Pro로 업그레이드",
-        upgradeToProLong: "프로 요금제로 업그레이드",
+        upgradeToProLong: "구독 관리",
         upgradeToProAction: "Pro로 업그레이드하기",
         paymentMethod: "결제 수단",
         defaultPaymentMethod: "기본 결제 수단",
@@ -171,12 +171,16 @@ export const translations = {
         subscriptionError: "구독 처리 중 오류가 발생했습니다: {message}",
         unexpectedPaymentError: "결제 요청 중 예기치 못한 오류가 발생했습니다.",
         anonymousUser: "소크라테스 AI 사용자",
+        subCancelledNotice: "구독이 취소되었습니다. {date}까지 Pro 혜택이 유지됩니다.",
+        resubscribe: "다시 구독하기",
+        paymentFailedNotice: "자동 결제에 실패하여 Pro 혜택이 중단되었습니다. 카드 정보를 확인해 주세요.",
+        updatePaymentMethod: "결제 수단 변경",
 
         // Usage Limit Modal
         usageLimitReached: "대화 횟수를 모두 사용했어요",
-        proLimitReached: "이번 주 대화 횟수를 모두 사용했어요. {resetTime}에 다시 이용 가능해요.",
-        freeLimitReached: "대화 횟수를 모두 사용했어요. Pro 회원으로 업그레이드해 보세요.",
-        anonymousLimitReached: "대화 횟수를 모두 사용했어요. 회원가입하면 더 많이 사용할 수 있어요.",
+        proLimitReached: "{resetTime}에 다시 이용 가능해요.",
+        freeLimitReached: "Pro 회원으로 업그레이드해 보세요.",
+        anonymousLimitReached: "회원가입하면 더 많이 사용할 수 있어요.",
         loginToContinue: "회원가입하고 계속하기",
         depthLimitReached: "대화의 최대 깊이에 도달했어요. 정답 보기 또는 새 대화를 눌러주세요.",
 
@@ -318,11 +322,15 @@ export const translations = {
 
         // Usage Limit Modal
         usageLimitReached: "Usage Limit Reached",
-        proLimitReached: "You've used all your sessions for this week. You can use it again at {resetTime}.",
-        freeLimitReached: "You've used all your sessions. Try upgrading to a Pro member.",
-        anonymousLimitReached: "You've used all your sessions. You can use more if you sign up.",
+        proLimitReached: "Available again at {resetTime}.",
+        freeLimitReached: "Try upgrading to a Pro member.",
+        anonymousLimitReached: "You can use more if you sign up.",
         loginToContinue: "Sign up and Continue",
         depthLimitReached: "Maximum depth of conversation reached. Please click 'View Answer' or 'New Chat'.",
+        subCancelledNotice: "Subscription cancelled. Pro benefits valid until {date}.",
+        resubscribe: "Resubscribe",
+        paymentFailedNotice: "Pro benefits have been suspended due to a payment failure. Please check your card information.",
+        updatePaymentMethod: "Update Payment Method",
 
         // Account Support Modals
         deleteAccountTitle: "Are you sure you want to leave?",

@@ -1,4 +1,4 @@
-import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, PinOff, Pencil, LogOut, User, LayoutDashboard, Headset, Share2, Languages } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Menu, X, CheckCircle2, Search, Settings, Star, Bookmark, MoreVertical, Pin, PinOff, Pencil, LogOut, User, LayoutDashboard, Headset, Share2, Languages, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -276,8 +276,11 @@ export function MobileSidebar({
                       {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
                     </div>
                     <div className="flex flex-col items-start min-w-0 text-left">
-                      <span className="text-sm font-medium truncate w-full">
+                      <span className="text-sm font-medium truncate w-full flex items-center gap-2">
                         {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || t('user')}
+                        {isPro && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">Pro Plan</span>
+                        )}
                       </span>
                       <span className="text-[10px] text-muted-foreground truncate w-full">
                         {user?.email}
@@ -293,8 +296,11 @@ export function MobileSidebar({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">
-                      {user?.displayName || t('user')}
-                    </div>
+                        {user?.displayName || t('user')}
+                        {isPro && (
+                          <span className="ml-2 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold inline-flex items-center">Pro Plan</span>
+                        )}
+                      </div>
                     <div className="text-xs text-muted-foreground truncate">
                       {user?.email}
                     </div>
@@ -318,15 +324,16 @@ export function MobileSidebar({
                   <Settings className="w-4 h-4 mr-2" />
                   <span>{t('settings')}</span>
                 </DropdownMenuItem>
-                  {!isPro && (
-                    <DropdownMenuItem
-                      onClick={() => navigate('/pricing')}
-                      className="cursor-pointer"
-                    >
-                      <Star className="w-4 h-4 mr-2 text-blue-600" />
-                      <span>{t('upgradeToProLong')}</span>
-                    </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/pricing')}
+                  className={cn(
+                    "cursor-pointer font-bold",
+                    isPro ? "text-muted-foreground" : "text-primary"
                   )}
+                >
+                  {isPro ? <CreditCard className="w-4 h-4 mr-2" /> : <Star className="w-4 h-4 mr-2 text-blue-600" />}
+                  <span>{t('upgradeToProLong')}</span>
+                </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <div className="px-2 py-2">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">{t('language')}</p>

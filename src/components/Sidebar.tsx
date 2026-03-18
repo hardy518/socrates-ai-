@@ -289,8 +289,11 @@ export function Sidebar({
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium flex-shrink-0">
                         {(user?.displayName?.[0] || user?.email?.[0] || "U").toUpperCase()}
                       </div>
-                      <span className="text-sm font-medium truncate flex-1 text-left">
+                      <span className="text-sm font-medium truncate flex-1 text-left flex items-center gap-2">
                         {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || t('user')}
+                        {isPro && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold">Pro Plan</span>
+                        )}
                       </span>
                     </div>
                   </Button>
@@ -303,6 +306,9 @@ export function Sidebar({
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">
                         {user?.displayName || t('user')}
+                        {isPro && (
+                          <span className="ml-2 text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-bold inline-flex items-center">Pro Plan</span>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {user?.email}
@@ -327,15 +333,16 @@ export function Sidebar({
                     <Settings className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">{t('settings')}</span>
                   </DropdownMenuItem>
-                  {!isPro && (
-                    <DropdownMenuItem
-                      onClick={() => navigate('/pricing')}
-                      className="cursor-pointer gap-3 p-3 rounded-xl text-primary font-bold"
-                    >
-                      <Star className="w-4 h-4 mr-2 text-blue-600" />
-                      <span>{t('upgradeToProLong')}</span>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem
+                    onClick={() => navigate('/pricing')}
+                    className={cn(
+                      "cursor-pointer gap-3 p-3 rounded-xl font-bold",
+                      isPro ? "text-muted-foreground" : "text-primary"
+                    )}
+                  >
+                    {isPro ? <CreditCard className="w-4 h-4 mr-2" /> : <Star className="w-4 h-4 mr-2 text-blue-600" />}
+                    <span>{t('upgradeToProLong')}</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <div className="px-2 py-2">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">{t('language')}</p>

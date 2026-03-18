@@ -9,7 +9,7 @@ import {
 
 export interface Subscription {
     plan: 'pro';
-    status: 'active' | 'cancelled';
+    status: 'active' | 'cancelled' | 'inactive';
     startDate: Timestamp;
     endDate: Timestamp;
     orderId?: string;
@@ -78,7 +78,17 @@ export const setProPlan = async (userId: string, paymentData: {
  */
 export const checkIsPro = async (userId: string): Promise<boolean> => {
     const sub = await getSubscription(userId);
-    return sub !== null && sub.plan === 'pro' && sub.status === 'active';
+    if (!sub || sub.plan !== 'pro') return false;
+    
+    // 활성 상태이거나, 해지되었지만 아직 종료일이 지나지 않은 경우 Pro로 인정
+    if (sub.status === 'active') return true;
+    
+    if (sub.status === 'cancelled' && sub.endDate) {
+        const now = Timestamp.now();
+        return sub.endDate.seconds > now.seconds;
+    }
+    
+    return false;
 };
 
 /**

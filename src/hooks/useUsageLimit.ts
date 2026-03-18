@@ -83,9 +83,12 @@ export function useUsageLimit() {
       
       const subRef = doc(db, 'users', user.uid, 'subscription', 'current');
       const subDoc = await getDoc(subRef);
-      const isPro = subDoc.exists() && subDoc.data()?.plan === 'pro' && subDoc.data()?.status === 'active';
-      setIsPro(isPro);
       const subData = subDoc.data();
+      const isPro = subDoc.exists() && subData?.plan === 'pro' && (
+        subData?.status === 'active' || 
+        (subData?.status === 'cancelled' && subData?.endDate && subData.endDate.seconds > Timestamp.now().seconds)
+      );
+      setIsPro(isPro);
       const startDate = subData?.startDate;
       const isAnonymous = user.isAnonymous;
 

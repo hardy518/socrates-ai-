@@ -92,6 +92,15 @@ export const handler: Handler = async (event) => {
 
         switch (type) {
             case "Transaction.Paid": {
+                const paymentId = data?.paymentId || data?.payment?.id || `recurring_${customerId}_${Date.now()}`;
+                
+                // 1. Idempotency Check: Check if this payment was already processed
+                const paymentDoc = await userRef.collection("payments").doc(paymentId).get();
+                if (paymentDoc.exists && paymentDoc.data()?.status === 'paid') {
+                    console.log(`Payment ${paymentId} already processed. Skipping.`);
+                    return { statusCode: 200, body: "OK (Already Processed)" };
+                }
+
                 const subDoc = await subRef.get();
                 const isFirstPayment = !subDoc.exists || !subDoc.data()?.startDate;
 
@@ -125,10 +134,9 @@ export const handler: Handler = async (event) => {
                 }, { merge: true });
 
                 // 2-1. Add to payment history
-                const paymentId = data?.paymentId || data?.payment?.id || `recurring_${customerId}_${Date.now()}`;
                 await userRef.collection("payments").doc(paymentId).set({
                     paymentId,
-                    amount: data?.amount?.total || 7000,
+                    amount: data?.amount?.total || 7500,
                     status: "paid",
                     cardLast4,
                     cardBrand,
@@ -172,15 +180,28 @@ export const handler: Handler = async (event) => {
                 break;
             }
 
-            case "Transaction.Failed": {
+            case "Transaction.Failed":
+            case "Schedule.Failed": {
                 await subRef.set({
                     status: 'inactive',
                     updatedAt: timestamp.now()
                 }, { merge: true });
 
+                // Reset usage to free limits
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+
+                await usageRef.set({
+                    limit: 5,
+                    count: 0,
+                    resetAt: timestamp.fromDate(tomorrow),
+                    updatedAt: timestamp.now()
+                }, { merge: true });
+
                 const userEmail = data?.customer?.email || "Unknown";
-                const failureReason = data?.statusText || "알 수 없는 이유";
-                await sendSlackMessage(`❌ 결제 실패: [${userEmail}] 결제 실패 | ${new Date().toLocaleString('ko-KR')} | 사유: ${failureReason}`);
+                const failureReason = data?.statusText || data?.message || "알 수 없는 이유";
+                await sendSlackMessage(`❌ 결제 실패 (${type}): [${userEmail}] 결제 실패 | ${new Date().toLocaleString('ko-KR')} | 사유: ${failureReason}`);
                 break;
             }
 

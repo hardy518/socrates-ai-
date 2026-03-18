@@ -79,6 +79,15 @@ const Pricing = () => {
         }
 
         try {
+            // Re-verify status just before showing payment window for maximum safety
+            const currentProStatus = await checkIsPro(user.uid);
+            if (currentProStatus) {
+                setIsPro(true);
+                toast.info(t('alreadyPro'));
+                setTimeout(() => navigate("/"), 500);
+                return;
+            }
+
             const customerId = user.uid;
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const redirectUrl = `${window.location.origin}/payment-success`;
