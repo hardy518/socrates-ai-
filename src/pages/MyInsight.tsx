@@ -198,13 +198,13 @@ const MyInsight = () => {
         }))
     : [];
 
-  const radarData = displayInsight ? [
-    { subject: '이유(Why)', value: displayInsight.spectrums.whyVsHow, fullMark: 100 },
-    { subject: '감성(Emotion)', value: displayInsight.spectrums.emotionVsLogic, fullMark: 100 },
-    { subject: '과정(Process)', value: displayInsight.spectrums.processVsResult, fullMark: 100 },
-    { subject: '방법(How)', value: 100 - displayInsight.spectrums.whyVsHow, fullMark: 100 },
-    { subject: '논리(Logic)', value: 100 - displayInsight.spectrums.emotionVsLogic, fullMark: 100 },
-    { subject: '결과(Result)', value: 100 - displayInsight.spectrums.processVsResult, fullMark: 100 },
+  const radarData = displayInsight?.spectrums ? [
+    { subject: '이유(Why)', value: displayInsight.spectrums.whyVsHow ?? 50, fullMark: 100 },
+    { subject: '감성(Emotion)', value: displayInsight.spectrums.emotionVsLogic ?? 50, fullMark: 100 },
+    { subject: '과정(Process)', value: displayInsight.spectrums.processVsResult ?? 50, fullMark: 100 },
+    { subject: '방법(How)', value: 100 - (displayInsight.spectrums.whyVsHow ?? 50), fullMark: 100 },
+    { subject: '논리(Logic)', value: 100 - (displayInsight.spectrums.emotionVsLogic ?? 50), fullMark: 100 },
+    { subject: '결과(Result)', value: 100 - (displayInsight.spectrums.processVsResult ?? 50), fullMark: 100 },
   ] : [];
 
   const formatResetDate = (timestamp: any) => {
@@ -389,59 +389,65 @@ const MyInsight = () => {
                     
                     <div className="bg-white border border-border shadow-sm rounded-[32px] p-8 lg:p-12 max-w-2xl group hover:shadow-md transition-all">
                     <div className="h-[280px] w-full px-2">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 40, top: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="rgba(0,0,0,0.03)" />
-                          <XAxis type="number" hide />
-                          <YAxis 
-                            dataKey="name" 
-                            type="category" 
-                            axisLine={false} 
-                            tickLine={false} 
-                            width={180}
-                            tick={(props) => {
-                              const { x, y, payload, index } = props;
-                              return (
-                                <g transform={`translate(${x},${y})`}>
-                                  <text
-                                    x={-170}
-                                    y={0}
-                                    dy={4}
-                                    textAnchor="start"
-                                    fill="#000"
-                                    style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}
-                                  >
-                                    <tspan fill="#000" opacity={0.3} className="mr-2">{index + 1}</tspan>
-                                    <tspan dx={12}>{payload.value}</tspan>
-                                  </text>
-                                </g>
-                              );
-                            }}
-                          />
-
-                          <Bar dataKey="count" radius={[0, 10, 10, 0]} barSize={32}>
-                            {chartData.map((entry, index) => {
-                              let opacity = 0.25;
-                              if (index === 0) opacity = 1;
-                              else if (index === 1) opacity = 0.7;
-                              else if (index === 2) opacity = 0.45;
-                              
-                              return (
-                                <Cell 
-                                  key={`cell-${index}`} 
-                                  fill={`rgba(var(--primary-rgb), ${opacity})`} 
-                                />
-                              );
-                            })}
-                            <LabelList 
-                              dataKey="count" 
-                              position="right" 
-                              formatter={(value: number) => `${value}회`}
-                              style={{ fill: '#000', fontSize: 16, fontWeight: 700 }}
+                      {chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart key={`bar-${chartData.length}`} data={chartData} layout="vertical" margin={{ left: 0, right: 40, top: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="rgba(0,0,0,0.03)" />
+                            <XAxis type="number" hide />
+                            <YAxis 
+                              dataKey="name" 
+                              type="category" 
+                              axisLine={false} 
+                              tickLine={false} 
+                              width={180}
+                              tick={(props) => {
+                                const { x, y, payload, index } = props;
+                                return (
+                                  <g transform={`translate(${x},${y})`}>
+                                    <text
+                                      x={-170}
+                                      y={0}
+                                      dy={4}
+                                      textAnchor="start"
+                                      fill="#000"
+                                      style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}
+                                    >
+                                      <tspan fill="#000" opacity={0.3} className="mr-2">{index + 1}</tspan>
+                                      <tspan dx={12}>{payload.value}</tspan>
+                                    </text>
+                                  </g>
+                                );
+                              }}
                             />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+
+                            <Bar dataKey="count" radius={[0, 10, 10, 0]} barSize={32}>
+                              {chartData.map((entry, index) => {
+                                let opacity = 0.25;
+                                if (index === 0) opacity = 1;
+                                else if (index === 1) opacity = 0.7;
+                                else if (index === 2) opacity = 0.45;
+                                
+                                return (
+                                  <Cell 
+                                    key={`cell-${index}`} 
+                                    fill={`rgba(var(--primary-rgb), ${opacity})`} 
+                                  />
+                                );
+                              })}
+                              <LabelList 
+                                dataKey="count" 
+                                position="right" 
+                                formatter={(value: number) => `${value}회`}
+                                style={{ fill: '#000', fontSize: 16, fontWeight: 700 }}
+                              />
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm font-medium italic">
+                          데이터를 분석하고 있습니다.
+                        </div>
+                      )}
                     </div>
                     </div>
                   </section>
@@ -497,38 +503,43 @@ const MyInsight = () => {
                     
                     <div className="bg-white border border-border shadow-sm rounded-[40px] p-4 sm:p-8 lg:p-12 max-w-2xl group relative overflow-hidden">
                       <div className="h-[320px] sm:h-[380px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                            <PolarGrid stroke="rgba(0,0,0,0.08)" />
-                            <PolarAngleAxis 
-                              dataKey="subject" 
-                              tick={{ fill: '#000', fontSize: 13, fontWeight: 500 }}
-                            />
-                            <PolarRadiusAxis 
-                              angle={90} 
-                              domain={[0, 100]} 
-                              tick={false} 
-                              axisLine={false} 
-                            />
-                            <Radar
-                              name="Status"
-                              dataKey="value"
-                              stroke="var(--primary)"
-                              fill="var(--primary)"
-                              fillOpacity={0.25}
-                              strokeWidth={3}
-                              dot={{ r: 5, fill: '#fff', stroke: 'var(--primary)', strokeWidth: 2 }}
-                              isAnimationActive={false}
-                            />
-                          </RadarChart>
-                        </ResponsiveContainer>
+                        {radarData.length >= 3 ? (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart key={`radar-${radarData.length}`} cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                              <PolarGrid stroke="rgba(0,0,0,0.08)" />
+                              <PolarAngleAxis 
+                                dataKey="subject" 
+                                tick={{ fill: '#000', fontSize: 13, fontWeight: 500 }}
+                              />
+                              <PolarRadiusAxis 
+                                angle={90} 
+                                domain={[0, 100]} 
+                                tick={false} 
+                                axisLine={false} 
+                              />
+                              <Radar
+                                name="Status"
+                                dataKey="value"
+                                stroke="var(--primary)"
+                                fill="var(--primary)"
+                                fillOpacity={0.25}
+                                strokeWidth={3}
+                                dot={{ r: 5, fill: '#fff', stroke: 'var(--primary)', strokeWidth: 2 }}
+                              />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm font-medium italic">
+                            {isExample ? "데이터를 분석하고 있습니다." : "충분한 데이터가 쌓이면 분석 결과가 나타납니다."}
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {[
-                          { label: "WHY 집중도", value: displayInsight?.spectrums.whyVsHow || 0, tip: "왜(Why)라는 질문을 얼마나 자주 탐구하는지를 나타냅니다" },
-                          { label: "논리적 사고", value: 100 - (displayInsight?.spectrums.emotionVsLogic || 50), tip: "감성보다 논리적 근거를 중심으로 사고하는 정도입니다" },
-                          { label: "과정 지향성", value: displayInsight?.spectrums.processVsResult || 0, tip: "결과보다 탐구하는 과정 자체를 중시하는 성향입니다" }
+                          { label: "WHY 집중도", value: displayInsight?.spectrums?.whyVsHow || 0, tip: "왜(Why)라는 질문을 얼마나 자주 탐구하는지를 나타냅니다" },
+                          { label: "논리적 사고", value: 100 - (displayInsight?.spectrums?.emotionVsLogic || 50), tip: "감성보다 논리적 근거를 중심으로 사고하는 정도입니다" },
+                          { label: "과정 지향성", value: displayInsight?.spectrums?.processVsResult || 0, tip: "결과보다 탐구하는 과정 자체를 중시하는 성향입니다" }
                         ].map((stat, i) => (
                           <div key={i} className="bg-secondary/20 rounded-2xl p-4 space-y-3 relative group/tooltip">
                              <div className="flex flex-col gap-1">
