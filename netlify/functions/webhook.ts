@@ -7,7 +7,10 @@ if (!admin.apps.length) {
         credential: admin.credential.cert({
             projectId: process.env.VITE_FIREBASE_PROJECT_ID,
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: (process.env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
+            privateKey: (process.env.FIREBASE_PRIVATE_KEY || "")
+                .trim()
+                .replace(/^["']|["']$/g, "")
+                .replace(/\\n/g, "\n"),
         }),
     });
 }
@@ -129,15 +132,20 @@ export const handler: Handler = async (event) => {
                 const cardBrand = cardMethod?.brand || "";
 
                 // Firestore에 billingKey와 카드 정보 저장
-                const subRef = db.collection("users").doc(customerId).collection("subscription").doc("current");
-                await subRef.set({
-                    billingKey,
-                    cardLast4,
-                    cardBrand,
-                    updatedAt: timestamp.now()
-                }, { merge: true });
-
-                console.log(`BillingKey.Issued 처리 완료 | userId: ${customerId} | billingKey: ${billingKey}`);
+                // 실패해도 포트원에 200을 반환해야 재시도 루프를 막을 수 있음
+                try {
+                    const subRef = db.collection("users").doc(customerId).collection("subscription").doc("current");
+                    await subRef.set({
+                        billingKey,
+                        cardLast4,
+                        cardBrand,
+                        updatedAt: timestamp.now()
+                    }, { merge: true });
+                    console.log(`BillingKey.Issued 처리 완료 | userId: ${customerId}`);
+                } catch (fsErr) {
+                    // subscribe / updateBillingKey가 뒤에 billingKey를 저장하므로 치명적이지 않음
+                    console.error(`BillingKey.Issued Firestore 저장 실패 | userId: ${customerId}`, fsErr);
+                }
                 break;
             }
 
