@@ -55,7 +55,8 @@ export const handler: Handler = async (event) => {
 
     if (response.ok) {
       const result = await response.json();
-      const cardInfo = result.method?.card;
+      // PortOne V2: 카드 정보는 methods 배열의 첫 번째 항목
+      const cardInfo = result.methods?.[0]?.card;
       cardLast4 = cardInfo?.number || "";
       cardBrand = cardInfo?.brand || "";
     }
@@ -90,8 +91,9 @@ export const handler: Handler = async (event) => {
         await sendSlackMessage(`⚠️ 카드 변경 중 기존 스케줄 취소 실패: [${contextUserId}] | scheduleId: ${oldScheduleId} | 사유: ${err.message}`);
       }
 
-      // 4. Re-create schedule with new billing key at the same time
-      const newScheduleId = `schedule_${userId}_${nextScheduledDate.getTime()}`;
+      // 4. Re-create schedule with new billing key — _r{count} suffix로 ID 충돌 방지
+      const newCount = (subData?.cardUpdateCount || 0) + 1;
+      const newScheduleId = `${baseScheduleId}_r${newCount}`;
       try {
         const scheduleResponse = await fetch("https://api.portone.io/payments-schedule", {
           method: "POST",
@@ -125,13 +127,14 @@ export const handler: Handler = async (event) => {
     }
 
     // 5. Update Firestore with new billing key, card info, and updated cardUpdateCount
+    // nextScheduledAt이 있을 때만 cardUpdateCount 저장 (스케줄 ID 추적 목적)
     const cardUpdateCount = (subData?.cardUpdateCount || 0) + (nextScheduledAt ? 1 : 0);
     await subRef.update({
       billingKey,
       cardLast4,
       cardBrand,
       ...(nextScheduledAt ? { cardUpdateCount } : {}),
-      updatedAt: admin.firestore.Timestamp.now()
+      updatedAt: admin.firestore.Timestamp.now(),
     });
 
     return {

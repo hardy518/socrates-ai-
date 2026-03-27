@@ -34,8 +34,6 @@ export const handler: Handler = async (event) => {
         return { statusCode: 405, headers, body: "Method Not Allowed" };
     }
 
-    // Version Marker: 2026-03-12-V3-ROOT
-    console.log("DEBUG: ROOT subscribe.ts - Body:", event.body);
     const body = event.body ? JSON.parse(event.body) : {};
     const { userId, billingKey, userName, userEmail, userPhone } = body;
     const apiSecret = process.env.PORTONE_V2_API_SECRET;

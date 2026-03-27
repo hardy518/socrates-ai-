@@ -228,7 +228,7 @@ const Settings = () => {
     if (!user) return;
     try {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const redirectUrl = `${window.location.origin}/payment-success`;
+      const redirectUrl = `${window.location.origin}/payment-success?mode=update-card`;
 
       const response = await (window as any).PortOne.requestIssueBillingKey({
           storeId: import.meta.env.VITE_PORTONE_STORE_ID,

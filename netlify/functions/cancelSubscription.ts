@@ -35,6 +35,12 @@ export const handler: Handler = async (event) => {
     const apiSecret = process.env.PORTONE_V2_API_SECRET;
     if (!apiSecret) throw new Error("API Secret is missing");
 
+    const sendSlackMessage = async (text: string) => {
+      const slackUrl = process.env.SLACK_PAYMENT_ALERT_WEBHOOK_URL;
+      if (!slackUrl) return;
+      await fetch(slackUrl, { method: 'POST', body: JSON.stringify({ text }) }).catch(() => {});
+    };
+
     const subRef = db.collection("users").doc(userId).collection("subscription").doc("current");
     const subDoc = await subRef.get();
     
@@ -47,7 +53,11 @@ export const handler: Handler = async (event) => {
 
     if (nextScheduledAt) {
       // 1. Cancel PortOne Schedule
-      const scheduleId = `schedule_${userId}_${nextScheduledAt.toDate().getTime()}`;
+      // 카드 교체 이력이 있으면 _r{count} suffix가 붙은 ID를 사용
+      const baseScheduleId = `schedule_${userId}_${nextScheduledAt.toDate().getTime()}`;
+      const scheduleId = subData?.cardUpdateCount
+        ? `${baseScheduleId}_r${subData.cardUpdateCount}`
+        : baseScheduleId;
       
       try {
         const cancelResponse = await fetch(`https://api.portone.io/schedules-cancel`, {
@@ -86,6 +96,9 @@ export const handler: Handler = async (event) => {
       },
       updatedAt: admin.firestore.Timestamp.now()
     });
+
+    // Slack 알림 (cancelSubscription 함수에서 직접 발송 — webhook 경로 의존 제거)
+    await sendSlackMessage(`🚫 구독 취소: [uid: ${userId}] | ${new Date().toLocaleString('ko-KR')}`);
 
     return {
       statusCode: 200,

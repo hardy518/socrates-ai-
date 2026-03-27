@@ -17,6 +17,7 @@ const PaymentSuccess = () => {
     const paymentKey = searchParams.get("paymentKey");
     const amount = searchParams.get("amount");
     const billingKey = searchParams.get("billingKey"); // 리다이렉트 시 전달되는 빌링키
+    const mode = searchParams.get("mode"); // "update-card" | null
 
     useEffect(() => {
         // billingKey를 읽는 즉시 URL에서 제거 (브라우저 히스토리 노출 방지)
@@ -28,7 +29,37 @@ const PaymentSuccess = () => {
     useEffect(() => {
         if (!user) return;
 
-        // 1. 리다이렉트로 넘어온 빌링키 처리 (모바일 결제용)
+        // 1. 모바일 카드 교체 리다이렉트 처리
+        if (billingKey && mode === 'update-card') {
+            const handleMobileCardUpdate = async () => {
+                try {
+                    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+                    const updateResponse = await fetch(`${API_BASE_URL}/.netlify/functions/updateBillingKey`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.uid, billingKey }),
+                    });
+
+                    if (updateResponse.ok) {
+                        toast.success("카드가 변경되었습니다.");
+                        setLoading(false);
+                        setTimeout(() => navigate("/settings"), 2000);
+                    } else {
+                        const result = await updateResponse.json();
+                        toast.error(result.message || "카드 변경 중 오류가 발생했습니다.");
+                        navigate("/settings");
+                    }
+                } catch (error) {
+                    console.error("Mobile card update failed:", error);
+                    toast.error("카드 변경 중 예기치 못한 오류가 발생했습니다.");
+                    navigate("/settings");
+                }
+            };
+            handleMobileCardUpdate();
+            return;
+        }
+
+        // 2. 리다이렉트로 넘어온 빌링키 처리 (모바일 구독용)
         if (billingKey && !orderId) {
             const handleMobileSubscription = async () => {
                 try {
@@ -48,7 +79,6 @@ const PaymentSuccess = () => {
                     const result = await subscribeResponse.json();
                     if (subscribeResponse.ok) {
                         toast.success("구독이 시작되었습니다!");
-                        // Firestore 업데이트를 기다리거나 직접 상태 변경
                         setLoading(false);
                         setTimeout(() => navigate("/"), 2000);
                     } else {
